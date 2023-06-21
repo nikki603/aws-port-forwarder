@@ -1,8 +1,8 @@
 import * as vscode from "vscode";
-import { listEC2Instances } from "./ec2"
-import { listProfiles } from './listProfiles'
+import { listEC2Instances } from "./ec2";
+import { listProfiles } from './listProfiles';
 
-export  class EC2Instance extends vscode.TreeItem {
+export class EC2Instance extends vscode.TreeItem {
     constructor(
       public readonly label: string,
       public readonly status: string,
@@ -12,19 +12,23 @@ export  class EC2Instance extends vscode.TreeItem {
     ) {
       super(label, collapsibleState);
       this.description = status;
-      if (platform == 'windows') {
+      if (platform === 'windows') {
         this.iconPath = new vscode.ThemeIcon('window');
+        this.contextValue = 'instance.windows';
       } else {
         this.iconPath = new vscode.ThemeIcon('device-desktop');
+        this.contextValue = 'instance';
       }
-      this.contextValue = 'instance';
+      
     }
   }
 
-  export class Profile {
-    name: string = '';
-    region: string = '';
-  }
+export class Profile {
+  name: string = '';
+  region: string = '';
+}
+
+const profilesKey = 'apf.profiles';
 
 export class InstanceTreeProvider implements vscode.TreeDataProvider<EC2Instance> {
     readonly eventEmitter = new vscode.EventEmitter<string | undefined>();
@@ -36,7 +40,7 @@ export class InstanceTreeProvider implements vscode.TreeDataProvider<EC2Instance
       this.context = context;
       this.defaultProfile.name = 'default';
       this.defaultProfile.region = 'us-east-1';
-      this.context.globalState.update('profile', this.defaultProfile);
+      this.context.globalState.update(profilesKey, this.defaultProfile);
     }
 
     private _onDidChangeTreeData: vscode.EventEmitter<EC2Instance | undefined> = new vscode.EventEmitter<EC2Instance | undefined>();
@@ -47,7 +51,7 @@ export class InstanceTreeProvider implements vscode.TreeDataProvider<EC2Instance
     }
 
     async configureProfile(): Promise<void> {
-      const profileConfigured: Profile | undefined = this.context.globalState.get('profile');
+      const profileConfigured: Profile | undefined = this.context.globalState.get(profilesKey);
       
       const profileNames = await listProfiles();
       const selectedProfile = await vscode.window.showQuickPick(profileNames, {
@@ -59,7 +63,7 @@ export class InstanceTreeProvider implements vscode.TreeDataProvider<EC2Instance
       profile.region = profileConfigured?.region || '';
 
       if (profile) {
-        this.context.globalState.update('profile', profile);
+        this.context.globalState.update(profilesKey, profile);
         this.refresh();
       }
     }
@@ -71,7 +75,7 @@ export class InstanceTreeProvider implements vscode.TreeDataProvider<EC2Instance
         if (element) {
             return Promise.resolve([]);
           } else {
-            const selectedProfile: Profile | undefined = this.context.globalState.get('profile');
+            const selectedProfile: Profile | undefined = this.context.globalState.get(profilesKey);
             
             return listEC2Instances(selectedProfile || this.defaultProfile);
           }

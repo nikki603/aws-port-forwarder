@@ -1,7 +1,8 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
-import { InstanceTreeProvider } from "./InstanceTreeProvider";
+import { EC2Instance, InstanceTreeProvider } from "./InstanceTreeProvider";
+import { startPortForwardingSession } from './ssm';
 // import { SharedCredentialsProviderFactory } from './auth/providers/sharedCredentialsProviderFactory'
 // import { CredentialsProviderManager } from './auth/providers/credentialsProviderManager'
 // import {
@@ -21,24 +22,22 @@ export async function activate(context: vscode.ExtensionContext) {
 
 	const ec2InstanceListViewProvider = new InstanceTreeProvider(context);
 
-	vscode.window.registerTreeDataProvider('instance-list', ec2InstanceListViewProvider);
+	vscode.window.registerTreeDataProvider('apf.instance-list', ec2InstanceListViewProvider);
 
 	// Refresh
-	vscode.commands.registerCommand('ec2-instances.refresh', () => {
+	vscode.commands.registerCommand('apf.ec2-instances.refresh', () => {
 		ec2InstanceListViewProvider.refresh();
 	});
 
 	// Configure account
-	vscode.commands.registerCommand('ec2-instances.configureProfile', () => {
+	vscode.commands.registerCommand('apf.ec2-instances.configureProfile', () => {
 		ec2InstanceListViewProvider.configureProfile();
 	});
-}
 
-// function initializeCredentialsProviderManager() {
-//     const manager = CredentialsProviderManager.getInstance()
-//     manager.addProviderFactory(new SharedCredentialsProviderFactory())
-//     //manager.addProviders(new Ec2CredentialsProvider(), new EcsCredentialsProvider(), new EnvVarsCredentialsProvider())
-// }
+	vscode.commands.registerCommand('apf.connectPortForward', async (node: EC2Instance) => {
+		startPortForwardingSession(context, node);
+	});
+}
 
 // This method is called when your extension is deactivated
 export function deactivate() {}

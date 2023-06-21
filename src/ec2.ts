@@ -38,7 +38,7 @@ export async function listEC2Instances(profile: Profile): Promise<EC2Instance[]>
       instance.State?.Name || '',
       instance.InstanceId || '',
       instance.Platform || '',
-      TreeItemCollapsibleState.Collapsed
+      TreeItemCollapsibleState.None
     );
   })
   .sort((a, b) => a.label.localeCompare(b.label));

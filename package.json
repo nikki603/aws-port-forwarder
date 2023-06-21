@@ -73,7 +73,7 @@
     "views": {
       "ec2-explorer": [
         {
-          "id": "instance-list",
+          "id": "apf.instance-list",
           "name": "Instances",
           "icon": "media/instances_light.svg"
         }
@@ -81,11 +81,11 @@
     },
     "commands": [
       {
-        "command": "ec2-instances.configureProfile",
+        "command": "apf.ec2-instances.configureProfile",
         "title": "Configure Profile"
       },
       {
-        "command": "ec2-instances.describeAccount",
+        "command": "apf.ec2-instances.describeAccount",
         "title": "Describe Account"
       },
       {
@@ -113,22 +113,56 @@
         }
       },
       {
-        "command": "ec2-instances.refresh",
+        "command": "apf.ec2-instances.refresh",
         "title": "Refresh Instance List",
         "icon": "$(refresh)"
+      },
+      {
+        "command": "apf.connect",
+        "title": "Connect"
+      },
+      {
+        "command": "apf.connectRdp",
+        "title": "Connect via RDP"
+      },
+      {
+        "command": "apf.connectRemotePortForward",
+        "title": "Connect to Remote Host..."
+      },
+      {
+        "command": "apf.connectPortForward",
+        "title": "Connect to Port..."
       }
     ],
     "menus": {
       "view/title": [
         {
-          "command": "ec2-instances.refresh",
-          "when": "view == instance-list",
+          "command": "apf.ec2-instances.refresh",
+          "when": "view == apf.instance-list",
           "group": "navigation"
         },
         {
-          "command": "ec2-instances.configureProfile",
-          "when": "view == instance-list"
+          "command": "apf.ec2-instances.configureProfile",
+          "when": "view == apf.instance-list"
         }
+      ],
+      "view/item/context": [
+        {
+          "command": "apf.connectPortForward",
+          "when": "view == apf.instance-list && viewItem =~ /^instance/",
+          "group": "0@2"
+        },
+        {
+          "command": "apf.connectRdp",
+          "when": "view == apf.instance-list && viewItem == instance.windows",
+          "group": "0@1"
+        },
+        {
+          "command": "apf.connectRemotePortForward",
+          "when": "view == apf.instance-list && viewItem =~ /^instance/",
+          "group": "0@3"
+        }
+        
       ]
     }
   },
