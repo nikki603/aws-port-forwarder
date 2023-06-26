@@ -2,14 +2,19 @@ import * as vscode from "vscode";
 import { listEC2Instances } from "./ec2";
 import { listProfiles } from './listProfiles';
 import { Profile } from "./InstanceTreeProvider";
+import { listConnectedSessions } from './ssm';
+import { STSClient, GetCallerIdentityCommand } from "@aws-sdk/client-sts"; 
 
 export class Session extends vscode.TreeItem {
   constructor(
     public readonly label: string,
     public readonly sessionId: string,
-    public readonly profile: Profile
+    public readonly status: string,
+    public readonly profile: Profile,
+    public readonly collapsibleState: vscode.TreeItemCollapsibleState,
   ) {
-    super(label, TreeItemCollapsibleState.None);
+    super(label, collapsibleState);
+    this.description = status;
   }
 }
 
@@ -28,9 +33,9 @@ export class SessionTreeProvider implements vscode.TreeDataProvider<Session> {
     private _onDidChangeTreeData: vscode.EventEmitter<Session | undefined> = new vscode.EventEmitter<Session | undefined>();
     readonly onDidChangeTreeData: vscode.Event<Session | undefined> = this._onDidChangeTreeData.event;
 
-    // refresh(): void {
-    //   this._onDidChangeTreeData.fire(undefined);
-    // }
+    refresh(): void {
+      this._onDidChangeTreeData.fire(undefined);
+    }
 
     getTreeItem(element: Session): vscode.TreeItem | Thenable<vscode.TreeItem> {
         return element;
@@ -39,10 +44,8 @@ export class SessionTreeProvider implements vscode.TreeDataProvider<Session> {
         if (element) {
             return Promise.resolve([]);
           } else {
-            return Promise.resolve(this.sessions);
-            // const selectedProfile: Profile | undefined = this.context.globalState.get(profilesKey);
-            
-            // return listEC2Instances(selectedProfile || this.defaultProfile);
+            const selectedProfile: Profile | undefined = this.context.globalState.get(profilesKey);
+            return listConnectedSessions(selectedProfile, this.context);
           }
     }
     getParent?(element: Session): vscode.ProviderResult<Session> {

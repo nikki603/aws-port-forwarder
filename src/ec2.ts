@@ -25,11 +25,11 @@ export async function listEC2Instances(profile: Profile): Promise<EC2Instance[]>
   ) ?? [];
 
   // Output the instance details
-  instances.forEach((instance) => {
-    console.log(`Instance ID: ${instance.InstanceId}`);
-    console.log(`Instance State: ${instance.State?.Name}`);
-    console.log('---');
-  });
+  // instances.forEach((instance) => {
+  //   console.log(`Instance ID: ${instance.InstanceId}`);
+  //   console.log(`Instance State: ${instance.State?.Name}`);
+  //   console.log('---');
+  // });
 
   return instances?.map(instance => {
     const nameTag = instance.Tags?.find(tag => tag.Key === 'Name');

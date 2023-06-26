@@ -123,6 +123,11 @@
         "icon": "$(refresh)"
       },
       {
+        "command": "apf.session-list.refresh",
+        "title": "Refresh Session List",
+        "icon": "$(refresh)"
+      },
+      {
         "command": "apf.connect",
         "title": "Connect"
       },
@@ -144,6 +149,11 @@
         {
           "command": "apf.ec2-instances.refresh",
           "when": "view == apf.instance-list",
+          "group": "navigation"
+        },
+        {
+          "command": "apf.session-list.refresh",
+          "when": "view == apf.session-list",
           "group": "navigation"
         },
         {

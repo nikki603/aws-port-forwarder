@@ -4,6 +4,7 @@ import * as vscode from 'vscode';
 import { EC2Instance, InstanceTreeProvider } from "./InstanceTreeProvider";
 import { SessionTreeProvider } from "./SessionTreeProvider";
 import { startPortForwardingSession } from './ssm';
+import { RefreshManager } from './RefreshManager';
 // import { SharedCredentialsProviderFactory } from './auth/providers/sharedCredentialsProviderFactory'
 // import { CredentialsProviderManager } from './auth/providers/credentialsProviderManager'
 // import {
@@ -31,6 +32,9 @@ export async function activate(context: vscode.ExtensionContext) {
 	vscode.commands.registerCommand('apf.ec2-instances.refresh', () => {
 		ec2InstanceListViewProvider.refresh();
 	});
+	vscode.commands.registerCommand('apf.session-list.refresh', () => {
+		sessionListViewProvider.refresh();
+	});
 
 	// Configure account
 	vscode.commands.registerCommand('apf.ec2-instances.configureProfile', () => {
@@ -40,6 +44,9 @@ export async function activate(context: vscode.ExtensionContext) {
 	vscode.commands.registerCommand('apf.connectPortForward', async (node: EC2Instance) => {
 		startPortForwardingSession(context, node);
 	});
+
+	// Register the refresh manager
+    context.subscriptions.push(new RefreshManager());
 }
 
 // This method is called when your extension is deactivated

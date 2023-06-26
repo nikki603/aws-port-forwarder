@@ -1,9 +1,11 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import * as vscode from "vscode";
-import { SSMClient, StartSessionCommand, TerminateSessionCommand } from '@aws-sdk/client-ssm';
+import { SSMClient, StartSessionCommand, TerminateSessionCommand, DescribeSessionsCommand } from '@aws-sdk/client-ssm';
 import { EC2Instance, Profile } from './InstanceTreeProvider';
+import { Session } from './SessionTreeProvider';
 import { fromIni } from "@aws-sdk/credential-providers";
 import { spawn } from 'child_process';
+import { STSClient, GetCallerIdentityCommand } from "@aws-sdk/client-sts"; 
 
 const profilesKey = 'apf.profiles';
 
@@ -126,4 +128,43 @@ export async function startRemotePortForwardingSession(context: vscode.Extension
     const response = await client.send(command);
 
     const sessionId = response.SessionId;
+}
+
+export async function listConnectedSessions(profile: Profile): Promise<string | undefined> {
+    const credentials = fromIni({ profile: profile.name });
+
+    const stsclient = new STSClient({credentials: credentials});
+    const input = {};
+    const stscommand = new GetCallerIdentityCommand(input);
+    const stsresponse = await stsclient.send(stscommand);
+
+    const client = new SSMClient({
+        region: profile.region,
+        credentials: credentials
+    });
+
+    const command = new DescribeSessionsCommand({
+        State: 'Active',
+        Filters: [ // SessionFilterList
+            { // SessionFilter
+            key: "Owner", // required
+            value: stsresponse.Arn, // required
+            },
+        ]
+    });
+
+    const response = await client.send(command);
+
+  const sessions = response.Sessions;
+
+  return sessions?.map(session => {
+    return new Session(
+      session.SessionId || '',
+      session.SessionId || '',
+      session.Status || '',
+      profile,
+      vscode.TreeItemCollapsibleState.None
+    );
+  })
+  .sort((a, b) => a.label.localeCompare(b.label));
 }
