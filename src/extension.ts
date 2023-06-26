@@ -2,6 +2,7 @@
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
 import { EC2Instance, InstanceTreeProvider } from "./InstanceTreeProvider";
+import { SessionTreeProvider } from "./SessionTreeProvider";
 import { startPortForwardingSession } from './ssm';
 // import { SharedCredentialsProviderFactory } from './auth/providers/sharedCredentialsProviderFactory'
 // import { CredentialsProviderManager } from './auth/providers/credentialsProviderManager'
@@ -21,8 +22,10 @@ export async function activate(context: vscode.ExtensionContext) {
 	// initializeCredentialsProviderManager()
 
 	const ec2InstanceListViewProvider = new InstanceTreeProvider(context);
-
 	vscode.window.registerTreeDataProvider('apf.instance-list', ec2InstanceListViewProvider);
+
+	const sessionListViewProvider = new SessionTreeProvider(context);
+	vscode.window.registerTreeDataProvider('apf.session-list', sessionListViewProvider);
 
 	// Refresh
 	vscode.commands.registerCommand('apf.ec2-instances.refresh', () => {

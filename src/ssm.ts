@@ -1,8 +1,9 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import * as vscode from "vscode";
-import { SSMClient, StartSessionCommand } from '@aws-sdk/client-ssm';
+import { SSMClient, StartSessionCommand, TerminateSessionCommand } from '@aws-sdk/client-ssm';
 import { EC2Instance, Profile } from './InstanceTreeProvider';
 import { fromIni } from "@aws-sdk/credential-providers";
+import { spawn } from 'child_process';
 
 const profilesKey = 'apf.profiles';
 
@@ -46,6 +47,34 @@ export async function startPortForwardingSession(context: vscode.ExtensionContex
     const response = await client.send(command);
 
     const sessionId = response.SessionId;
+    const ssmPluginArgs : string[] = [ 
+        JSON.stringify(response),
+        profile.region,
+        'StartSession',
+        profile.name,
+        JSON.stringify(command.input), 
+        `https://ssm.${profile.region}.amazonaws.com`
+    ];
+
+    const p = process;
+    const child = spawn('session-manager-plugin', ssmPluginArgs);
+
+    child.stdout.on('data', (data) => {
+        console.log(`apf: ${data}`);
+      });
+    child.on('error', (err) => {
+        console.error('Failed to start SSM plugin.');
+      }); 
+    child.on('exit', async function () {
+        console.log(`Closing Session ${sessionId}`);
+        const input = {
+            SessionId: sessionId,
+          };
+          const command = new TerminateSessionCommand(input);
+          const response = await client.send(command);
+          console.log(`Closed session ${sessionId}`);
+    });
+
     return sessionId;
 }
 

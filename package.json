@@ -76,6 +76,11 @@
           "id": "apf.instance-list",
           "name": "Instances",
           "icon": "media/instances_light.svg"
+        },
+        {
+          "id": "apf.session-list",
+          "name": "Sessions",
+          "icon": "media/instances_light.svg"
         }
       ]
     },
