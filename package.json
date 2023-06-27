@@ -174,20 +174,9 @@
     "@aws-sdk/client-ec2": "3.303.0",
     "@aws-sdk/client-ssm": "3.303.0",
     "@aws-sdk/types": "3.303.0",
-    "@aws-sdk/smithy-client": "3.303.0",
     "@aws-sdk/client-sts": "3.303.0",
-    "@aws-sdk/client-ec2-instance-connect": "3.303.0",
     "@aws-sdk/credential-providers": "3.303.0",
-    "@aws-sdk/shared-ini-file-loader": "3.303.0",
-    "aws-cdk-lib": "2.76.0",
-    "cdk-monitoring-constructs": "4.0.2",
-    "constructs": "10.2.6",
-    "lodash": "4.17.21",
-    "sshpk": "1.17.0",
-    "yargs": "17.7.1",
-    "tslib": "2.5.0",
-    "rxjs": "7.8.0",
-    "validator": "13.9.0"
+    "@aws-sdk/shared-ini-file-loader": "3.303.0"
   },
   "devDependencies": {
     "@types/vscode": "^1.79.0",

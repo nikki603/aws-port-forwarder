@@ -1,4 +1,5 @@
-import { EC2Client, DescribeInstancesCommand, Instance } from '@aws-sdk/client-ec2';
+/* eslint-disable @typescript-eslint/naming-convention */
+import { EC2Client, DescribeInstancesCommand } from '@aws-sdk/client-ec2';
 import { Profile } from "./models/profile.model";
 import { EC2Instance } from "./models/ec2Instance.model";
 import {
@@ -25,13 +26,6 @@ export async function listEC2Instances(profile: Profile): Promise<EC2Instance[]>
   const instances = response.Reservations?.flatMap(
     (reservation) => reservation.Instances ?? []
   ) ?? [];
-
-  // Output the instance details
-  // instances.forEach((instance) => {
-  //   console.log(`Instance ID: ${instance.InstanceId}`);
-  //   console.log(`Instance State: ${instance.State?.Name}`);
-  //   console.log('---');
-  // });
 
   var instanceItems = instances?.map(instance => {
     const nameTag = instance.Tags?.find(tag => tag.Key === 'Name');

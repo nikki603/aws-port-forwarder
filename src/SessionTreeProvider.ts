@@ -26,18 +26,18 @@ export class SessionTreeProvider implements vscode.TreeDataProvider<Session> {
   public async startPortForwardingSession(context: vscode.ExtensionContext, target: EC2Instance): Promise<void> {
     const localPort = await vscode.window.showInputBox({
       prompt: 'Enter local host port',
-      placeHolder: '22'
+      placeHolder: '22',
+      validateInput: this.validatePort
     });
-    if (!localPort) {
-      throw new Error('localPort');
-    }
 
     const remotePort = await vscode.window.showInputBox({
       prompt: 'Enter remote host port',
-      placeHolder: '22'
+      placeHolder: '22',
+      validateInput: this.validatePort
     });
-    if (!remotePort) {
-      throw new Error('remotePort');
+
+    if (!localPort || !remotePort) {
+      throw new Error('invalid ports');
     }
 
     await startPortForwardingSession(context, target, localPort, remotePort);
@@ -47,25 +47,25 @@ export class SessionTreeProvider implements vscode.TreeDataProvider<Session> {
   public async startRemotePortForwardingSession(context: vscode.ExtensionContext, target: EC2Instance): Promise<void> {
     const localPort = await vscode.window.showInputBox({
       prompt: 'Enter local host port',
-      placeHolder: '22'
+      placeHolder: '22',
+      validateInput: this.validatePort
     });
-    if (!localPort) {
-      throw new Error('localPort');
-    }
 
     const remoteHost = await vscode.window.showInputBox({
       prompt: 'Enter remote host'
     });
     if (!remoteHost) {
-      throw new Error('remoteHost');
+      throw new Error('remoteHost invalid');
     }
 
     const remotePort = await vscode.window.showInputBox({
       prompt: 'Enter remote host port',
-      placeHolder: '22'
+      placeHolder: '22',
+      validateInput: this.validatePort
     });
-    if (!remotePort) {
-      throw new Error('remotePort');
+
+    if (!localPort || !remotePort) {
+      throw new Error('invalid ports');
     }
 
     await startRemotePortForwardingSession(context, target, localPort, remotePort, remoteHost);
@@ -93,5 +93,11 @@ export class SessionTreeProvider implements vscode.TreeDataProvider<Session> {
   }
   resolveTreeItem?(item: vscode.TreeItem, element: Session, token: vscode.CancellationToken): vscode.ProviderResult<vscode.TreeItem> {
     throw new Error("Method not implemented.");
+  }
+
+  private validatePort(port: string): string {
+    return !port || isNaN(parseFloat(port)) ? 
+      'Not a valid port number' :
+      '';
   }
 }
