@@ -5,6 +5,7 @@ import {
   TreeItemCollapsibleState
 } from "vscode";
 import { fromIni } from "@aws-sdk/credential-providers";
+import { sort } from './utils';
 
 export async function listEC2Instances(profile: Profile): Promise<EC2Instance[]> {
   const credentials = fromIni({ profile: profile.name });
@@ -32,15 +33,17 @@ export async function listEC2Instances(profile: Profile): Promise<EC2Instance[]>
   //   console.log('---');
   // });
 
-  return instances?.map(instance => {
+  var instanceItems = instances?.map(instance => {
     const nameTag = instance.Tags?.find(tag => tag.Key === 'Name');
     return new EC2Instance(
       nameTag?.Value || instance.InstanceId || '',
       instance.State?.Name || '',
       instance.InstanceId || '',
       instance.Platform || '',
+      instance.PrivateIpAddress || '',
       TreeItemCollapsibleState.None
     );
-  })
-  .sort((a, b) => a.label.localeCompare(b.label));
+  }) || [];
+  const getLabel = (i: EC2Instance): string => i.label;
+  return sort(instanceItems, getLabel);
 }

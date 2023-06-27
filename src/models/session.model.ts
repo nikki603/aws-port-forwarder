@@ -18,13 +18,17 @@ export class Session extends vscode.TreeItem {
     this.description = status;
     this.contextValue = 'session';
 
+    const hoverMessage = this.generateTooltip();
+    this.tooltip = hoverMessage.value;
+  }
+
+  private generateTooltip() {
     const hoverMessage = new vscode.MarkdownString();
     hoverMessage.isTrusted = true;
     hoverMessage.appendMarkdown(`* SessionId: ${this.sessionId}\n`);
     hoverMessage.appendMarkdown(`* Target: ${this.target}\n`);
     hoverMessage.appendMarkdown(`* Start Date: ${this.startDate.toString()}\n`);
     hoverMessage.appendMarkdown(`* Document Name: ${this.documentName}\n`);
-    hoverMessage.appendMarkdown(`* Reason: ${this.reason}\n`);
-    this.tooltip = hoverMessage.value;
+    return hoverMessage;
   }
 }

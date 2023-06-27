@@ -8,6 +8,7 @@ import { fromIni } from "@aws-sdk/credential-providers";
 import { spawn } from 'child_process';
 import { STSClient, GetCallerIdentityCommand } from "@aws-sdk/client-sts"; 
 import { profilesKey } from './constants';
+import { sort } from './utils';
 
 export async function startPortForwardingSession(context: vscode.ExtensionContext, target: EC2Instance, localPort: string, remotePort: string): Promise<void> {
     const profile: Profile | undefined = context.globalState.get(profilesKey);
@@ -88,7 +89,7 @@ export async function listConnectedSessions(profile: Profile): Promise<Session[]
   const sessions = response.Sessions;
 
   // https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/clients/client-ssm/classes/describesessionscommand.html
-  return sessions?.map(session => {
+  var sessionViewItems = sessions?.map(session => {
     return new Session(
       session.Reason || session.SessionId || '',
       session.SessionId || '',
@@ -100,8 +101,9 @@ export async function listConnectedSessions(profile: Profile): Promise<Session[]
       profile,
       vscode.TreeItemCollapsibleState.None
     );
-  })
-  .sort((a, b) => a.label.localeCompare(b.label));
+  }) || [];
+  const getLabel = (session: Session): string => session.label;
+  return sort(sessionViewItems, getLabel);
 }
 
 export async function terminateSession(context: vscode.ExtensionContext, sessionId: string): Promise<void> {
@@ -136,13 +138,12 @@ function startSSMPlugin(sessionResponse: StartSessionCommandOutput, profile: Pro
 
     const sessionId = sessionResponse.SessionId;
     child.stdout.on('data', (data) => {
-        console.log(`apf: ${data}`);
-        vscode.window.showInformationMessage(`apf: ${data}`);
+        console.log(`${data}`);
+        vscode.window.showInformationMessage(`${data}`);
     });
     child.on('error', (err) => {
-        console.error('Failed to start SSM plugin.');
-        console.error(`Error: ${err.message}`);
-        vscode.window.showErrorMessage(`Error: ${err.message}`);
+        console.error(`Error: ${JSON.stringify(err)}`);
+        vscode.window.showErrorMessage('Failed to start SSM plugin.');
     });
     child.on('exit', async function () {
         console.log(`Closing Session ${sessionId}`);

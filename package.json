@@ -94,30 +94,6 @@
         "title": "Describe Account"
       },
       {
-        "command": "awsrd.selectProfile",
-        "title": "Select AWS profile",
-        "icon": {
-          "light": "media/user_light.svg",
-          "dark": "media/user_dark.svg"
-        }
-      },
-      {
-        "command": "awsrd.selectRegion",
-        "title": "Select AWS region",
-        "icon": {
-          "light": "media/globe_light.svg",
-          "dark": "media/globe_dark.svg"
-        }
-      },
-      {
-        "command": "awsrd.open",
-        "title": "Connect in new window",
-        "icon": {
-          "dark": "media/new_window_dark.svg",
-          "light": "media/new_window_light.svg"
-        }
-      },
-      {
         "command": "apf.ec2-instances.refresh",
         "title": "Refresh Instance List",
         "icon": "$(refresh)"
@@ -126,10 +102,6 @@
         "command": "apf.session-list.refresh",
         "title": "Refresh Session List",
         "icon": "$(refresh)"
-      },
-      {
-        "command": "apf.connect",
-        "title": "Connect"
       },
       {
         "command": "apf.connectRdp",
