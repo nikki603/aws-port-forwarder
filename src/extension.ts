@@ -1,9 +1,10 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
-import { EC2Instance, InstanceTreeProvider } from "./InstanceTreeProvider";
+import { InstanceTreeProvider } from "./InstanceTreeProvider";
+import { EC2Instance } from "./models/ec2Instance.model";
 import { SessionTreeProvider } from "./SessionTreeProvider";
-import { startPortForwardingSession } from './ssm';
+import { Session } from './models/session.model';
 import { RefreshManager } from './RefreshManager';
 // import { SharedCredentialsProviderFactory } from './auth/providers/sharedCredentialsProviderFactory'
 // import { CredentialsProviderManager } from './auth/providers/credentialsProviderManager'
@@ -42,7 +43,11 @@ export async function activate(context: vscode.ExtensionContext) {
 	});
 
 	vscode.commands.registerCommand('apf.connectPortForward', async (node: EC2Instance) => {
-		startPortForwardingSession(context, node);
+		sessionListViewProvider.startPortForwardingSession(context, node);
+	});
+
+	vscode.commands.registerCommand('apf.terminateSession', async (node: Session) => {
+		sessionListViewProvider.terminateSession(context, node);
 	});
 
 	// Register the refresh manager

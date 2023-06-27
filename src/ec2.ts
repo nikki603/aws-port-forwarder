@@ -1,5 +1,6 @@
 import { EC2Client, DescribeInstancesCommand, Instance } from '@aws-sdk/client-ec2';
-import { EC2Instance, Profile } from './InstanceTreeProvider'
+import { Profile } from "./models/profile.model";
+import { EC2Instance } from "./models/ec2Instance.model";
 import {
   TreeItemCollapsibleState
 } from "vscode";

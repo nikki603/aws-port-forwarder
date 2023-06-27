@@ -142,6 +142,10 @@
       {
         "command": "apf.connectPortForward",
         "title": "Connect to Port..."
+      },
+      {
+        "command": "apf.terminateSession",
+        "title": "Terminate Session"
       }
     ],
     "menus": {
@@ -176,6 +180,11 @@
           "command": "apf.connectRemotePortForward",
           "when": "view == apf.instance-list && viewItem =~ /^instance/",
           "group": "0@3"
+        },
+        {
+          "command": "apf.terminateSession",
+          "when": "view == apf.session-list && viewItem =~ /^session/",
+          "group": "0@1"
         }
         
       ]

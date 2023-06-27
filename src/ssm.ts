@@ -1,15 +1,15 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import * as vscode from "vscode";
-import { SSMClient, StartSessionCommand, TerminateSessionCommand, DescribeSessionsCommand } from '@aws-sdk/client-ssm';
-import { EC2Instance, Profile } from './InstanceTreeProvider';
-import { Session } from './SessionTreeProvider';
+import { SSMClient, StartSessionCommand, TerminateSessionCommand, DescribeSessionsCommand, StartSessionCommandOutput } from '@aws-sdk/client-ssm';
+import { Profile } from "./models/profile.model";
+import { EC2Instance } from "./models/ec2Instance.model";
+import { Session } from "./models/session.model";
 import { fromIni } from "@aws-sdk/credential-providers";
 import { spawn } from 'child_process';
 import { STSClient, GetCallerIdentityCommand } from "@aws-sdk/client-sts"; 
+import { profilesKey } from './constants';
 
-const profilesKey = 'apf.profiles';
-
-export async function startPortForwardingSession(context: vscode.ExtensionContext, target: EC2Instance): Promise<string | undefined> {
+export async function startPortForwardingSession(context: vscode.ExtensionContext, target: EC2Instance, localPort: string, remotePort: string): Promise<void> {
     const profile: Profile | undefined = context.globalState.get(profilesKey);
     if (!profile) {
         throw new Error('profile');
@@ -20,26 +20,10 @@ export async function startPortForwardingSession(context: vscode.ExtensionContex
         credentials: credentials
     });
 
-    const localPort = await vscode.window.showInputBox({
-        prompt: 'Enter local host port',
-        placeHolder: '22'
-    });
-    if (!localPort) {
-        throw new Error('localPort');
-    }
-
-    const remotePort = await vscode.window.showInputBox({
-        prompt: 'Enter remote host port',
-        placeHolder: '22'
-    });
-    if (!remotePort) {
-        throw new Error('remotePort');
-    }
-
     const command = new StartSessionCommand({
         DocumentName: 'AWS-StartPortForwardingSession',
         Target: target.instanceId,
-        Reason: 'Remote access from aws-port-forwarder vscode extension',
+        Reason: `${localPort} -> ${target.label}:${remotePort}`,
         Parameters: {
             "portNumber": [remotePort],
             "localPortNumber": [localPort],
@@ -48,39 +32,10 @@ export async function startPortForwardingSession(context: vscode.ExtensionContex
 
     const response = await client.send(command);
 
-    const sessionId = response.SessionId;
-    const ssmPluginArgs : string[] = [ 
-        JSON.stringify(response),
-        profile.region,
-        'StartSession',
-        profile.name,
-        JSON.stringify(command.input), 
-        `https://ssm.${profile.region}.amazonaws.com`
-    ];
-
-    const p = process;
-    const child = spawn('session-manager-plugin', ssmPluginArgs);
-
-    child.stdout.on('data', (data) => {
-        console.log(`apf: ${data}`);
-      });
-    child.on('error', (err) => {
-        console.error('Failed to start SSM plugin.');
-      }); 
-    child.on('exit', async function () {
-        console.log(`Closing Session ${sessionId}`);
-        const input = {
-            SessionId: sessionId,
-          };
-          const command = new TerminateSessionCommand(input);
-          const response = await client.send(command);
-          console.log(`Closed session ${sessionId}`);
-    });
-
-    return sessionId;
+    startSSMPlugin(response, profile, command, client);
 }
 
-export async function startRemotePortForwardingSession(context: vscode.ExtensionContext, target: EC2Instance): Promise<void> {
+export async function startRemotePortForwardingSession(context: vscode.ExtensionContext, target: EC2Instance, localPort: string, remotePort: string, remoteHost: string): Promise<void> {
     const profile: Profile | undefined = context.globalState.get(profilesKey);
     if (!profile) {
         throw new Error('profile');
@@ -91,33 +46,10 @@ export async function startRemotePortForwardingSession(context: vscode.Extension
         credentials: credentials
     });
 
-    const localPort = await vscode.window.showInputBox({
-        prompt: 'Enter local host port',
-        placeHolder: '22'
-    });
-    if (!localPort) {
-        throw new Error('localPort');
-    }
-
-    const remoteHost = await vscode.window.showInputBox({
-        prompt: 'Enter remote host'
-    });
-    if (!remoteHost) {
-        throw new Error('remoteHost');
-    }
-
-    const remotePort = await vscode.window.showInputBox({
-        prompt: 'Enter remote host port',
-        placeHolder: '22'
-    });
-    if (!remotePort) {
-        throw new Error('remotePort');
-    }
-
     const command = new StartSessionCommand({
         DocumentName: 'AWS-StartPortForwardingSessionToRemoteHost',
         Target: target.instanceId,
-        Reason: 'Remote access from aws-port-forwarder vscode extension',
+        Reason: `${localPort} -> ${remoteHost}:${remotePort}`,
         Parameters: {
             "host": [remoteHost],
             "portNumber": [remotePort],
@@ -126,16 +58,14 @@ export async function startRemotePortForwardingSession(context: vscode.Extension
     });
 
     const response = await client.send(command);
-
-    const sessionId = response.SessionId;
+    startSSMPlugin(response, profile, command, client);
 }
 
-export async function listConnectedSessions(profile: Profile): Promise<string | undefined> {
+export async function listConnectedSessions(profile: Profile): Promise<Session[] | undefined> {
     const credentials = fromIni({ profile: profile.name });
 
     const stsclient = new STSClient({credentials: credentials});
-    const input = {};
-    const stscommand = new GetCallerIdentityCommand(input);
+    const stscommand = new GetCallerIdentityCommand({});
     const stsresponse = await stsclient.send(stscommand);
 
     const client = new SSMClient({
@@ -145,10 +75,10 @@ export async function listConnectedSessions(profile: Profile): Promise<string | 
 
     const command = new DescribeSessionsCommand({
         State: 'Active',
-        Filters: [ // SessionFilterList
-            { // SessionFilter
-            key: "Owner", // required
-            value: stsresponse.Arn, // required
+        Filters: [ 
+            { 
+                key: "Owner", 
+                value: stsresponse.Arn, 
             },
         ]
     });
@@ -157,14 +87,70 @@ export async function listConnectedSessions(profile: Profile): Promise<string | 
 
   const sessions = response.Sessions;
 
+  // https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/clients/client-ssm/classes/describesessionscommand.html
   return sessions?.map(session => {
     return new Session(
-      session.SessionId || '',
+      session.Reason || session.SessionId || '',
       session.SessionId || '',
       session.Status || '',
+      session.Target || '',
+      session.StartDate || new Date(),
+      session.DocumentName || '',
+      session.Reason || '',
       profile,
       vscode.TreeItemCollapsibleState.None
     );
   })
   .sort((a, b) => a.label.localeCompare(b.label));
+}
+
+export async function terminateSession(context: vscode.ExtensionContext, sessionId: string): Promise<void> {
+    const profile: Profile | undefined = context.globalState.get(profilesKey);
+    if (!profile) {
+        throw new Error('profile');
+    }
+    const credentials = fromIni({ profile: profile.name });
+    const client = new SSMClient({
+        region: profile.region,
+        credentials: credentials
+    });
+
+    const command = new TerminateSessionCommand({
+       SessionId: sessionId
+    });
+
+    const response = await client.send(command);
+}
+
+function startSSMPlugin(sessionResponse: StartSessionCommandOutput, profile: Profile, command: StartSessionCommand, client: SSMClient) {
+    const ssmPluginArgs: string[] = [
+        JSON.stringify(sessionResponse),
+        profile.region,
+        'StartSession',
+        profile.name,
+        JSON.stringify(command.input),
+        `https://ssm.${profile.region}.amazonaws.com`
+    ];
+
+    const child = spawn('session-manager-plugin', ssmPluginArgs);
+
+    const sessionId = sessionResponse.SessionId;
+    child.stdout.on('data', (data) => {
+        console.log(`apf: ${data}`);
+        vscode.window.showInformationMessage(`apf: ${data}`);
+    });
+    child.on('error', (err) => {
+        console.error('Failed to start SSM plugin.');
+        console.error(`Error: ${err.message}`);
+        vscode.window.showErrorMessage(`Error: ${err.message}`);
+    });
+    child.on('exit', async function () {
+        console.log(`Closing Session ${sessionId}`);
+        const input = {
+            SessionId: sessionId,
+        };
+        const command = new TerminateSessionCommand(input);
+        const response = await client.send(command);
+        console.log(`Closed session ${sessionId}`);
+    });
 }

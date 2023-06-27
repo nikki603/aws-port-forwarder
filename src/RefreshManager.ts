@@ -42,7 +42,7 @@ export class RefreshManager extends vscode.Disposable {
     private setupRefreshOnInterval(): void {
         const timer = setInterval(async () => {
             console.log("session list refresh");
-            SessionTreeProvider.refresh();
+            //SessionTreeProvider.refresh();
             // for (const view of AllTreePrefixes) {
                 
             //     await this.refresh(view, 'interval');

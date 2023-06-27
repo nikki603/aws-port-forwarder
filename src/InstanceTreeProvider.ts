@@ -1,34 +1,9 @@
 import * as vscode from "vscode";
 import { listEC2Instances } from "./ec2";
 import { listProfiles } from './listProfiles';
-
-export class EC2Instance extends vscode.TreeItem {
-    constructor(
-      public readonly label: string,
-      public readonly status: string,
-      public readonly instanceId: string,
-      public readonly platform: string,
-      public readonly collapsibleState: vscode.TreeItemCollapsibleState,
-    ) {
-      super(label, collapsibleState);
-      this.description = status;
-      if (platform === 'windows') {
-        this.iconPath = new vscode.ThemeIcon('window');
-        this.contextValue = 'instance.windows';
-      } else {
-        this.iconPath = new vscode.ThemeIcon('device-desktop');
-        this.contextValue = 'instance';
-      }
-      
-    }
-  }
-
-export class Profile {
-  name: string = '';
-  region: string = '';
-}
-
-const profilesKey = 'apf.profiles';
+import { EC2Instance } from "./models/ec2Instance.model";
+import { Profile } from "./models/profile.model";
+import { profilesKey } from './constants';
 
 export class InstanceTreeProvider implements vscode.TreeDataProvider<EC2Instance> {
     readonly eventEmitter = new vscode.EventEmitter<string | undefined>();

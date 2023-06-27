@@ -1,57 +1,97 @@
 import * as vscode from "vscode";
-import { listEC2Instances } from "./ec2";
-import { listProfiles } from './listProfiles';
-import { Profile } from "./InstanceTreeProvider";
+import { Profile } from "./models/profile.model";
+import { EC2Instance } from './models/ec2Instance.model';
 import { listConnectedSessions } from './ssm';
-import { STSClient, GetCallerIdentityCommand } from "@aws-sdk/client-sts"; 
-
-export class Session extends vscode.TreeItem {
-  constructor(
-    public readonly label: string,
-    public readonly sessionId: string,
-    public readonly status: string,
-    public readonly profile: Profile,
-    public readonly collapsibleState: vscode.TreeItemCollapsibleState,
-  ) {
-    super(label, collapsibleState);
-    this.description = status;
-  }
-}
-
-const profilesKey = 'apf.profiles';
+import { Session } from "./models/session.model";
+import { profilesKey } from './constants';
+import { startPortForwardingSession, startRemotePortForwardingSession, terminateSession } from './ssm';
 
 export class SessionTreeProvider implements vscode.TreeDataProvider<Session> {
-    readonly eventEmitter = new vscode.EventEmitter<string | undefined>();
-    context: vscode.ExtensionContext;
-    sessions: Session[];
+  readonly eventEmitter = new vscode.EventEmitter<string | undefined>();
+  context: vscode.ExtensionContext;
+  sessions: Session[];
 
-    constructor(context: vscode.ExtensionContext) {
-      this.context = context;
-      this.sessions = new Array<Session>();
+  constructor(context: vscode.ExtensionContext) {
+    this.context = context;
+    this.sessions = new Array<Session>();
+  }
+
+  private _onDidChangeTreeData: vscode.EventEmitter<Session | undefined> = new vscode.EventEmitter<Session | undefined>();
+  readonly onDidChangeTreeData: vscode.Event<Session | undefined> = this._onDidChangeTreeData.event;
+
+  public refresh(): void {
+    this._onDidChangeTreeData.fire(undefined);
+  }
+
+  public async startPortForwardingSession(context: vscode.ExtensionContext, target: EC2Instance): Promise<void> {
+    const localPort = await vscode.window.showInputBox({
+      prompt: 'Enter local host port',
+      placeHolder: '22'
+    });
+    if (!localPort) {
+      throw new Error('localPort');
     }
 
-    private _onDidChangeTreeData: vscode.EventEmitter<Session | undefined> = new vscode.EventEmitter<Session | undefined>();
-    readonly onDidChangeTreeData: vscode.Event<Session | undefined> = this._onDidChangeTreeData.event;
-
-    refresh(): void {
-      this._onDidChangeTreeData.fire(undefined);
+    const remotePort = await vscode.window.showInputBox({
+      prompt: 'Enter remote host port',
+      placeHolder: '22'
+    });
+    if (!remotePort) {
+      throw new Error('remotePort');
     }
 
-    getTreeItem(element: Session): vscode.TreeItem | Thenable<vscode.TreeItem> {
-        return element;
+    await startPortForwardingSession(context, target, localPort, remotePort);
+    this.refresh();
+  }
+
+  public async startRemotePortForwardingSession(context: vscode.ExtensionContext, target: EC2Instance): Promise<void> {
+    const localPort = await vscode.window.showInputBox({
+      prompt: 'Enter local host port',
+      placeHolder: '22'
+    });
+    if (!localPort) {
+      throw new Error('localPort');
     }
-    getChildren(element?: Session | undefined): vscode.ProviderResult<Session[]> {
-        if (element) {
-            return Promise.resolve([]);
-          } else {
-            const selectedProfile: Profile | undefined = this.context.globalState.get(profilesKey);
-            return listConnectedSessions(selectedProfile, this.context);
-          }
+
+    const remoteHost = await vscode.window.showInputBox({
+      prompt: 'Enter remote host'
+    });
+    if (!remoteHost) {
+      throw new Error('remoteHost');
     }
-    getParent?(element: Session): vscode.ProviderResult<Session> {
-        throw new Error("Method not implemented.");
+
+    const remotePort = await vscode.window.showInputBox({
+      prompt: 'Enter remote host port',
+      placeHolder: '22'
+    });
+    if (!remotePort) {
+      throw new Error('remotePort');
     }
-    resolveTreeItem?(item: vscode.TreeItem, element: Session, token: vscode.CancellationToken): vscode.ProviderResult<vscode.TreeItem> {
-        throw new Error("Method not implemented.");
+
+    await startRemotePortForwardingSession(context, target, localPort, remotePort, remoteHost);
+    this.refresh();
+  }
+
+  public async terminateSession(context: vscode.ExtensionContext, session: Session): Promise<void> {
+    await terminateSession(context, session.sessionId);
+    this.refresh();
+  }
+
+  getTreeItem(element: Session): vscode.TreeItem | Thenable<vscode.TreeItem> {
+    return element;
+  }
+  getChildren(element?: Session | undefined): vscode.ProviderResult<Session[]> {
+    if (element) {
+      return Promise.resolve([]);
+    } else {
+      const selectedProfile: Profile | undefined = this.context.globalState.get(profilesKey);
+      return listConnectedSessions(selectedProfile || new Profile());
     }
+  }
+  getParent?(element: Session): vscode.ProviderResult<Session> {
+    throw new Error("Method not implemented.");
+  }
+  resolveTreeItem?(item: vscode.TreeItem, element: Session, token: vscode.CancellationToken): vscode.ProviderResult<vscode.TreeItem> {
+    throw new Error("Method not implemented.");
+  }
 }
