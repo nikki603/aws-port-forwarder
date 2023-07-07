@@ -12,31 +12,24 @@
   "activationEvents": [],
   "main": "./out/extension.js",
   "contributes": {
-    "configuration": {
-      "title": "EC2",
-      "properties": {
-      }
-    },
     "viewsContainers": {
       "activitybar": [
         {
-          "id": "ec2-explorer",
+          "id": "session-explorer",
           "title": "AWS Session Manager",
           "icon": "src/media/instances_dark.svg"
         }
       ]
     },
     "views": {
-      "ec2-explorer": [
+      "session-explorer": [
         {
           "id": "apf.instance-list",
-          "name": "Instances",
-          "icon": "media/instances_light.svg"
+          "name": "Instances"
         },
         {
           "id": "apf.session-list",
-          "name": "Sessions",
-          "icon": "media/instances_light.svg"
+          "name": "Sessions"
         }
       ]
     },
