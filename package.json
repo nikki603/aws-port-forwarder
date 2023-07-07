@@ -17,7 +17,7 @@
         {
           "id": "session-explorer",
           "title": "AWS Session Manager",
-          "icon": "src/media/instances_dark.svg"
+          "icon": "$(symbol-variable)"
         }
       ]
     },
