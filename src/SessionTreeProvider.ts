@@ -6,13 +6,16 @@ import { startPortForwardingSession, startRemotePortForwardingSession, terminate
 import { ProfileStorage } from "./ProfileStorage";
 import { RegionStorage } from "./RegionStorage";
 import { RefreshManager } from "./RefreshManager";
+import { startSSMPlugin } from "./SSMPluginProvider";
 
 export class SessionTreeProvider implements vscode.TreeDataProvider<Session>, vscode.Disposable {
   readonly eventEmitter = new vscode.EventEmitter<string | undefined>();
   sessions: Session[];
   private disposables: vscode.Disposable[] = [];
 
-  constructor(private readonly profileStore: ProfileStorage, private readonly regionStore: RegionStorage, private readonly refreshManager: RefreshManager) {
+  constructor(private readonly profileStore: ProfileStorage,
+    private readonly regionStore: RegionStorage,
+    private readonly refreshManager: RefreshManager) {
     this.sessions = new Array<Session>();
     this.disposables.push(
       this.regionStore.onSelectionChanged(this.refresh, this),
@@ -24,7 +27,8 @@ export class SessionTreeProvider implements vscode.TreeDataProvider<Session>, vs
   private _onDidChangeTreeData: vscode.EventEmitter<Session | undefined> = new vscode.EventEmitter<Session | undefined>();
   readonly onDidChangeTreeData: vscode.Event<Session | undefined> = this._onDidChangeTreeData.event;
 
-  public refresh(): void {
+  public refresh(eventName: string | undefined): void {
+    console.log(eventName);
     this._onDidChangeTreeData.fire(undefined);
   }
 
@@ -49,8 +53,8 @@ export class SessionTreeProvider implements vscode.TreeDataProvider<Session>, vs
     const currentRegion = this.regionStore.getCurrentRegion();
 
     if (currentProfile && currentRegion) {
-      await startPortForwardingSession(currentProfile, currentRegion, target, localPort, remotePort);
-      this.refresh();
+      await startPortForwardingSession(currentProfile, currentRegion, target, localPort, remotePort, startSSMPlugin);
+      this.refresh('session_started');
     }
   }
 
@@ -81,8 +85,8 @@ export class SessionTreeProvider implements vscode.TreeDataProvider<Session>, vs
     const currentProfile = this.profileStore.getCurrentProfileId();
     const currentRegion = this.regionStore.getCurrentRegion();
     if (currentProfile && currentRegion) {
-      await startRemotePortForwardingSession(currentProfile, currentRegion, target, localPort, remotePort, remoteHost);
-      this.refresh();
+      await startRemotePortForwardingSession(currentProfile, currentRegion, target, localPort, remotePort, remoteHost, startSSMPlugin);
+      this.refresh('session_started');
     }
   }
 
@@ -91,7 +95,7 @@ export class SessionTreeProvider implements vscode.TreeDataProvider<Session>, vs
     const currentRegion = this.regionStore.getCurrentRegion();
     if (currentProfile && currentRegion) {
       await terminateSession(currentProfile, currentRegion, session.sessionId);
-      this.refresh();
+      this.refresh('session_terminated');
     }
   }
 

@@ -38,8 +38,8 @@ export async function activate(context: vscode.ExtensionContext) {
 	vscode.commands.registerCommand('apf.ec2-instances.refresh', () => {
 		ec2InstanceListViewProvider.refresh();
 	});
-	vscode.commands.registerCommand('apf.session-list.refresh', () => {
-		sessionListViewProvider.refresh();
+	vscode.commands.registerCommand('apf.session-list.refresh', (eventName) => {
+		sessionListViewProvider.refresh(eventName);
 	});
 	vscode.commands.registerCommand('apf.connectPortForward', async (node: EC2Instance) => {
 		sessionListViewProvider.startPortForwardingSession(node);
@@ -50,9 +50,6 @@ export async function activate(context: vscode.ExtensionContext) {
 	vscode.commands.registerCommand('apf.terminateSession', async (node: Session) => {
 		sessionListViewProvider.terminateSession(node);
 	});
-
-	// Register the refresh manager
-    context.subscriptions.push(new RefreshManager());
 }
 
 // This method is called when your extension is deactivated

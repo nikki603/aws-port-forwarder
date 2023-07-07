@@ -18,6 +18,12 @@ export class Session extends vscode.TreeItem {
     super(label, collapsibleState);
     this.description = status;
     this.contextValue = 'session';
+    if (this.status === 'Connected') {
+      this.iconPath = new vscode.ThemeIcon('vm-active');
+    } else {
+      this.iconPath = new vscode.ThemeIcon('vm-connect');
+    }
+    
 
     const hoverMessage = this.generateTooltip();
     this.tooltip = hoverMessage.value;
