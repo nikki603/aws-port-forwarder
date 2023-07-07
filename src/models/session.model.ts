@@ -11,7 +11,8 @@ export class Session extends vscode.TreeItem {
     public readonly startDate: Date,
     public readonly documentName: string,
     public readonly reason: string,
-    public readonly profile: Profile,
+    public readonly profile: string,
+    public readonly region: string,
     public readonly collapsibleState: vscode.TreeItemCollapsibleState
   ) {
     super(label, collapsibleState);
@@ -29,6 +30,7 @@ export class Session extends vscode.TreeItem {
     hoverMessage.appendMarkdown(`* Target: ${this.target}\n`);
     hoverMessage.appendMarkdown(`* Start Date: ${this.startDate.toString()}\n`);
     hoverMessage.appendMarkdown(`* Document Name: ${this.documentName}\n`);
+    hoverMessage.appendMarkdown(`* Region: ${this.region}\n`);
     return hoverMessage;
   }
 }

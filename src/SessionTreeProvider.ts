@@ -1,19 +1,24 @@
 import * as vscode from "vscode";
-import { Profile } from "./models/profile.model";
 import { EC2Instance } from './models/ec2Instance.model';
 import { listConnectedSessions } from './ssm';
 import { Session } from "./models/session.model";
-import { profilesKey } from './constants';
 import { startPortForwardingSession, startRemotePortForwardingSession, terminateSession } from './ssm';
+import { ProfileStorage } from "./ProfileStorage";
+import { RegionStorage } from "./RegionStorage";
+import { RefreshManager } from "./RefreshManager";
 
-export class SessionTreeProvider implements vscode.TreeDataProvider<Session> {
+export class SessionTreeProvider implements vscode.TreeDataProvider<Session>, vscode.Disposable {
   readonly eventEmitter = new vscode.EventEmitter<string | undefined>();
-  context: vscode.ExtensionContext;
   sessions: Session[];
+  private disposables: vscode.Disposable[] = [];
 
-  constructor(context: vscode.ExtensionContext) {
-    this.context = context;
+  constructor(private readonly profileStore: ProfileStorage, private readonly regionStore: RegionStorage, private readonly refreshManager: RefreshManager) {
     this.sessions = new Array<Session>();
+    this.disposables.push(
+      this.regionStore.onSelectionChanged(this.refresh, this),
+      this.profileStore.onSelectionChanged(this.refresh, this),
+      this.refreshManager.onTimedEvent(this.refresh, this)
+    );
   }
 
   private _onDidChangeTreeData: vscode.EventEmitter<Session | undefined> = new vscode.EventEmitter<Session | undefined>();
@@ -23,7 +28,7 @@ export class SessionTreeProvider implements vscode.TreeDataProvider<Session> {
     this._onDidChangeTreeData.fire(undefined);
   }
 
-  public async startPortForwardingSession(context: vscode.ExtensionContext, target: EC2Instance): Promise<void> {
+  public async startPortForwardingSession(target: EC2Instance): Promise<void> {
     const localPort = await vscode.window.showInputBox({
       prompt: 'Enter local host port',
       placeHolder: '22',
@@ -40,11 +45,16 @@ export class SessionTreeProvider implements vscode.TreeDataProvider<Session> {
       throw new Error('invalid ports');
     }
 
-    await startPortForwardingSession(context, target, localPort, remotePort);
-    this.refresh();
+    const currentProfile = this.profileStore.getCurrentProfileId();
+    const currentRegion = this.regionStore.getCurrentRegion();
+
+    if (currentProfile && currentRegion) {
+      await startPortForwardingSession(currentProfile, currentRegion, target, localPort, remotePort);
+      this.refresh();
+    }
   }
 
-  public async startRemotePortForwardingSession(context: vscode.ExtensionContext, target: EC2Instance): Promise<void> {
+  public async startRemotePortForwardingSession(target: EC2Instance): Promise<void> {
     const localPort = await vscode.window.showInputBox({
       prompt: 'Enter local host port',
       placeHolder: '22',
@@ -68,13 +78,21 @@ export class SessionTreeProvider implements vscode.TreeDataProvider<Session> {
       throw new Error('invalid ports');
     }
 
-    await startRemotePortForwardingSession(context, target, localPort, remotePort, remoteHost);
-    this.refresh();
+    const currentProfile = this.profileStore.getCurrentProfileId();
+    const currentRegion = this.regionStore.getCurrentRegion();
+    if (currentProfile && currentRegion) {
+      await startRemotePortForwardingSession(currentProfile, currentRegion, target, localPort, remotePort, remoteHost);
+      this.refresh();
+    }
   }
 
-  public async terminateSession(context: vscode.ExtensionContext, session: Session): Promise<void> {
-    await terminateSession(context, session.sessionId);
-    this.refresh();
+  public async terminateSession(session: Session): Promise<void> {
+    const currentProfile = this.profileStore.getCurrentProfileId();
+    const currentRegion = this.regionStore.getCurrentRegion();
+    if (currentProfile && currentRegion) {
+      await terminateSession(currentProfile, currentRegion, session.sessionId);
+      this.refresh();
+    }
   }
 
   getTreeItem(element: Session): vscode.TreeItem | Thenable<vscode.TreeItem> {
@@ -84,8 +102,12 @@ export class SessionTreeProvider implements vscode.TreeDataProvider<Session> {
     if (element) {
       return Promise.resolve([]);
     } else {
-      const selectedProfile: Profile | undefined = this.context.globalState.get(profilesKey);
-      return listConnectedSessions(selectedProfile || new Profile());
+      const currentProfile = this.profileStore.getCurrentProfileId();
+      const currentRegion = this.regionStore.getCurrentRegion();
+
+      if (currentProfile && currentRegion) {
+        return listConnectedSessions(currentProfile, currentRegion);
+      }
     }
   }
   getParent?(element: Session): vscode.ProviderResult<Session> {
@@ -96,8 +118,12 @@ export class SessionTreeProvider implements vscode.TreeDataProvider<Session> {
   }
 
   private validatePort(port: string): string {
-    return !port || isNaN(parseFloat(port)) ? 
+    return !port || isNaN(parseFloat(port)) ?
       'Not a valid port number' :
       '';
+  }
+
+  dispose() {
+    this.disposables.forEach((d) => d.dispose());
   }
 }

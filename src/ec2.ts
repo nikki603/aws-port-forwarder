@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/naming-convention */
-import { EC2Client, DescribeInstancesCommand } from '@aws-sdk/client-ec2';
-import { Profile } from "./models/profile.model";
+import { EC2Client, DescribeInstancesCommand, DescribeRegionsCommand } from '@aws-sdk/client-ec2';
 import { EC2Instance } from "./models/ec2Instance.model";
 import {
   TreeItemCollapsibleState
@@ -8,10 +7,26 @@ import {
 import { fromIni } from "@aws-sdk/credential-providers";
 import { sort } from './utils';
 
-export async function listEC2Instances(profile: Profile): Promise<EC2Instance[]> {
-  const credentials = fromIni({ profile: profile.name });
+export async function getRegions(profile: string): Promise<string[]> {
+  const credentials = fromIni({ profile: profile });
   const client = new EC2Client({
-    region: profile.region,
+    credentials: credentials
+  });
+
+  const command = new DescribeRegionsCommand({});
+  const response = await client.send(command);
+
+  const regions = response.Regions?.map(region => {
+    return region.RegionName;
+  }) || [];
+  const getSortField = (r: string): string => r;
+  return sort(regions, getSortField);
+}
+
+export async function listEC2Instances(profile: string, region: string): Promise<EC2Instance[]> {
+  const credentials = fromIni({ profile: profile });
+  const client = new EC2Client({
+    region: region,
     credentials: credentials
   });
 
@@ -35,6 +50,7 @@ export async function listEC2Instances(profile: Profile): Promise<EC2Instance[]>
       instance.InstanceId || '',
       instance.Platform || '',
       instance.PrivateIpAddress || '',
+      instance.PublicIpAddress || '',
       TreeItemCollapsibleState.None
     );
   }) || [];

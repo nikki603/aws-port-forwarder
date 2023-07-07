@@ -1,21 +1,18 @@
 import * as vscode from "vscode";
 import { listEC2Instances } from "./ec2";
-import { listProfiles } from './listProfiles';
 import { EC2Instance } from "./models/ec2Instance.model";
-import { Profile } from "./models/profile.model";
-import { profilesKey } from './constants';
+import { ProfileStorage } from "./ProfileStorage";
+import { RegionStorage } from "./RegionStorage";
 
-export class InstanceTreeProvider implements vscode.TreeDataProvider<EC2Instance> {
+export class InstanceTreeProvider implements vscode.TreeDataProvider<EC2Instance>, vscode.Disposable {
     readonly eventEmitter = new vscode.EventEmitter<string | undefined>();
-    context: vscode.ExtensionContext;
-
-    defaultProfile = new Profile();
+    private disposables: vscode.Disposable[] = [];
       
-    constructor(context: vscode.ExtensionContext) {
-      this.context = context;
-      this.defaultProfile.name = 'default';
-      this.defaultProfile.region = 'us-east-1';
-      this.context.globalState.update(profilesKey, this.defaultProfile);
+    constructor(private readonly profileStore: ProfileStorage, private readonly regionStore: RegionStorage) {
+      this.disposables.push(
+        this.regionStore.onSelectionChanged(this.refresh, this),
+        this.profileStore.onSelectionChanged(this.refresh, this)
+      );
     }
 
     private _onDidChangeTreeData: vscode.EventEmitter<EC2Instance | undefined> = new vscode.EventEmitter<EC2Instance | undefined>();
@@ -25,24 +22,6 @@ export class InstanceTreeProvider implements vscode.TreeDataProvider<EC2Instance
       this._onDidChangeTreeData.fire(undefined);
     }
 
-    async configureProfile(): Promise<void> {
-      const profileConfigured: Profile | undefined = this.context.globalState.get(profilesKey);
-      
-      const profileNames = await listProfiles();
-      const selectedProfile = await vscode.window.showQuickPick(profileNames, {
-        title: "Select an AWS profile",
-      });
-
-      const profile = new Profile();
-      profile.name = selectedProfile || profileConfigured?.name || '';
-      profile.region = profileConfigured?.region || '';
-
-      if (profile) {
-        this.context.globalState.update(profilesKey, profile);
-        this.refresh();
-      }
-    }
-
     getTreeItem(element: EC2Instance): vscode.TreeItem | Thenable<vscode.TreeItem> {
         return element;
     }
@@ -50,9 +29,12 @@ export class InstanceTreeProvider implements vscode.TreeDataProvider<EC2Instance
         if (element) {
             return Promise.resolve([]);
           } else {
-            const selectedProfile: Profile | undefined = this.context.globalState.get(profilesKey);
+            const currentProfile = this.profileStore.getCurrentProfileId();
+            const currentRegion = this.regionStore.getCurrentRegion();
             
-            return listEC2Instances(selectedProfile || this.defaultProfile);
+            if (currentProfile && currentRegion) {
+              return listEC2Instances(currentProfile, currentRegion);
+            }
           }
     }
     getParent?(element: EC2Instance): vscode.ProviderResult<EC2Instance> {
@@ -60,5 +42,9 @@ export class InstanceTreeProvider implements vscode.TreeDataProvider<EC2Instance
     }
     resolveTreeItem?(item: vscode.TreeItem, element: EC2Instance, token: vscode.CancellationToken): vscode.ProviderResult<vscode.TreeItem> {
         throw new Error("Method not implemented.");
+    }
+
+    dispose() {
+      this.disposables.forEach((d) => d.dispose());
     }
 }

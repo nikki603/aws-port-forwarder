@@ -1,23 +1,17 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import * as vscode from "vscode";
 import { SSMClient, StartSessionCommand, TerminateSessionCommand, DescribeSessionsCommand, StartSessionCommandOutput } from '@aws-sdk/client-ssm';
-import { Profile } from "./models/profile.model";
 import { EC2Instance } from "./models/ec2Instance.model";
 import { Session } from "./models/session.model";
 import { fromIni } from "@aws-sdk/credential-providers";
 import { spawn } from 'child_process';
 import { STSClient, GetCallerIdentityCommand } from "@aws-sdk/client-sts"; 
-import { profilesKey } from './constants';
 import { sort } from './utils';
 
-export async function startPortForwardingSession(context: vscode.ExtensionContext, target: EC2Instance, localPort: string, remotePort: string): Promise<void> {
-    const profile: Profile | undefined = context.globalState.get(profilesKey);
-    if (!profile) {
-        throw new Error('profile');
-    }
-    const credentials = fromIni({ profile: profile.name });
+export async function startPortForwardingSession(profile: string, region: string, target: EC2Instance, localPort: string, remotePort: string): Promise<void> {
+    const credentials = fromIni({ profile: profile });
     const client = new SSMClient({
-        region: profile.region,
+        region: region,
         credentials: credentials
     });
 
@@ -33,17 +27,13 @@ export async function startPortForwardingSession(context: vscode.ExtensionContex
 
     const response = await client.send(command);
 
-    startSSMPlugin(response, profile, command, client);
+    startSSMPlugin(response, profile, region, command, client);
 }
 
-export async function startRemotePortForwardingSession(context: vscode.ExtensionContext, target: EC2Instance, localPort: string, remotePort: string, remoteHost: string): Promise<void> {
-    const profile: Profile | undefined = context.globalState.get(profilesKey);
-    if (!profile) {
-        throw new Error('profile');
-    }
-    const credentials = fromIni({ profile: profile.name });
+export async function startRemotePortForwardingSession(profile: string, region: string, target: EC2Instance, localPort: string, remotePort: string, remoteHost: string): Promise<void> {
+    const credentials = fromIni({ profile: profile });
     const client = new SSMClient({
-        region: profile.region,
+        region: region,
         credentials: credentials
     });
 
@@ -59,18 +49,18 @@ export async function startRemotePortForwardingSession(context: vscode.Extension
     });
 
     const response = await client.send(command);
-    startSSMPlugin(response, profile, command, client);
+    startSSMPlugin(response, profile, region, command, client);
 }
 
-export async function listConnectedSessions(profile: Profile): Promise<Session[] | undefined> {
-    const credentials = fromIni({ profile: profile.name });
+export async function listConnectedSessions(profile: string, region: string): Promise<Session[] | undefined> {
+    const credentials = fromIni({ profile: profile });
 
     const stsclient = new STSClient({credentials: credentials});
     const stscommand = new GetCallerIdentityCommand({});
     const stsresponse = await stsclient.send(stscommand);
 
     const client = new SSMClient({
-        region: profile.region,
+        region: region,
         credentials: credentials
     });
 
@@ -99,6 +89,7 @@ export async function listConnectedSessions(profile: Profile): Promise<Session[]
       session.DocumentName || '',
       session.Reason || '',
       profile,
+      region,
       vscode.TreeItemCollapsibleState.None
     );
   }) || [];
@@ -106,14 +97,10 @@ export async function listConnectedSessions(profile: Profile): Promise<Session[]
   return sort(sessionViewItems, getLabel);
 }
 
-export async function terminateSession(context: vscode.ExtensionContext, sessionId: string): Promise<void> {
-    const profile: Profile | undefined = context.globalState.get(profilesKey);
-    if (!profile) {
-        throw new Error('profile');
-    }
-    const credentials = fromIni({ profile: profile.name });
+export async function terminateSession(profile: string, region: string, sessionId: string): Promise<void> {
+    const credentials = fromIni({ profile: profile });
     const client = new SSMClient({
-        region: profile.region,
+        region: region,
         credentials: credentials
     });
 
@@ -124,14 +111,14 @@ export async function terminateSession(context: vscode.ExtensionContext, session
     const response = await client.send(command);
 }
 
-function startSSMPlugin(sessionResponse: StartSessionCommandOutput, profile: Profile, command: StartSessionCommand, client: SSMClient) {
+function startSSMPlugin(sessionResponse: StartSessionCommandOutput, profile: string, region: string, command: StartSessionCommand, client: SSMClient) {
     const ssmPluginArgs: string[] = [
         JSON.stringify(sessionResponse),
-        profile.region,
+        region,
         'StartSession',
-        profile.name,
+        profile,
         JSON.stringify(command.input),
-        `https://ssm.${profile.region}.amazonaws.com`
+        `https://ssm.${region}.amazonaws.com`
     ];
 
     const child = spawn('session-manager-plugin', ssmPluginArgs);
@@ -155,3 +142,7 @@ function startSSMPlugin(sessionResponse: StartSessionCommandOutput, profile: Pro
         console.log(`Closed session ${sessionId}`);
     });
 }
+
+/*
+Error: {"errno":-2,"code":"ENOENT","syscall":"spawn session-manager-plugin","path":"session-manager-plugin","spawnargs":["{\"$metadata\":{\"httpStatusCode\":200,\"requestId\":\"353304da-e429-4238-8f95-4e2d3978a765\",\"attempts\":1,\"totalRetryDelay\":0},\"SessionId\":\"nicole.sands@ihsmarkit.com-01dc4c3150f53f6d3\",\"StreamUrl\":\"wss://ssmmessages.us-east-1.amazonaws.com/v1/data-channel/nicole.sands@ihsmarkit.com-01dc4c3150f53f6d3?role=publish_subscribe&cell-number=AAEAAdAv6B6/fyea7aVtsfJBENBdSq3VSy23SgK1JnZWSXr9AAAAAGSm18el9XyJ+NonD5wqNaz7mTpUPFe8YY3zL6IP86XMJ7u+GA==\",\"TokenValue\":\"AAEAAU9EpmAz1LyiZ4PZ06tBWR3y3NGM6Qaf9y7En0IBHN47AAAAAGSm18hksWGtzEEjsQZUYkPlwOMk4FLPn+E5nHGD8WJ8WtTxzKA+rpvqVHTiwkd0O4S8KDGsWM9g3oq4btGmXLlTmel6mTTyY+YF/AYgciAPNyyP/vgUikN/ZF7jSv9zM3tbAJnF/YjmIMxgaqqNqwD5zsq5Wd0T5PmwRLnALN5wHLX2n1hQvbydvnL6Ef7dXQldgdNybOZXRWE+JbH5H26BDsaeUr+vhjbPw07pHzbWN7OIPcJFzaa6gI7h7rzu7sqIzW911wWL1S194wPvdAkr1PaaDdtmtOAb5JWrDIg1oQLxkU/p4r2QaFMx5O8E058LeSCAuVMx7+iZ+UpA2J9h9TUCNxJBLGyXI1JSSjVLuU5z+U2HXjcrwPpHiM4DOT4FiDL2AXcfwd3OEmv8dFa7Bc6Icor0ZcCyfYqWj6wkQLaksCIp+CtI51N38lWIWXwl7a0XzVR7FAEXnP2rwonfuVSFwYeIoMqFztdEonVtFDuihY9mXsBzu/4Qd967/J4qHYYC3rKSRmzfgw++PclXPd4UxbeCC7/FbcuBSOP1kVZr9b6SITBnoUOWrYW3ZVLavBD3kDncrWpB9AUIESZeGTs6\"}","us-east-1","StartSession","default","{\"DocumentName\":\"AWS-StartPortForwardingSession\",\"Target\":\"i-069682c908990f158\",\"Reason\":\"22 -> Agents ADOPS (bdc-dev-linux):22\",\"Parameters\":{\"portNumber\":[\"22\"],\"localPortNumber\":[\"22\"]}}","https://ssm.us-east-1.amazonaws.com"]}
+*/

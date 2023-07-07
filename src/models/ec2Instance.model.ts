@@ -8,6 +8,7 @@ export class EC2Instance extends vscode.TreeItem {
     public readonly instanceId: string,
     public readonly platform: string,
     public readonly privateIpv4: string,
+    public readonly publicIpv4: string,
     public readonly collapsibleState: vscode.TreeItemCollapsibleState
   ) {
     super(label, collapsibleState);
@@ -30,6 +31,9 @@ export class EC2Instance extends vscode.TreeItem {
     hoverMessage.appendMarkdown(`* InstanceId: ${this.instanceId}\n`);
     hoverMessage.appendMarkdown(`* Platform: ${this.platform}\n`);
     hoverMessage.appendMarkdown(`* Private IP Address: ${this.privateIpv4}\n`);
+    if (this.publicIpv4) {
+      hoverMessage.appendMarkdown(`* Public IP Address: ${this.publicIpv4}\n`);
+    }
     return hoverMessage;
   }
 }
