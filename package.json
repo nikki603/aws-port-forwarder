@@ -15,6 +15,10 @@
     "EC2",
     "SSM"
   ],
+  "repository": {
+    "type": "github",
+    "url": "https://github.com/nikki603/aws-port-forwarder"
+  },
   "license": "MIT",
   "activationEvents": [],
   "main": "./out/extension.js",
