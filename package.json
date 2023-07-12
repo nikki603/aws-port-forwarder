@@ -1,14 +1,21 @@
 {
   "name": "aws-port-forwarder",
   "displayName": "aws-port-forwarder",
-  "description": "",
-  "version": "0.0.1",
+  "description": "Uses AWS SSM to manage port forwarding from VS Code",
+  "publisher": "NicoleSands",
+  "version": "0.0.2",
   "engines": {
     "vscode": "^1.79.0"
   },
   "categories": [
     "Other"
   ],
+  "keywords": [
+    "AWS",
+    "EC2",
+    "SSM"
+  ],
+  "license": "MIT",
   "activationEvents": [],
   "main": "./out/extension.js",
   "contributes": {

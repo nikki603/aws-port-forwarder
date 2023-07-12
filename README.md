@@ -2,23 +2,51 @@
 
 ## Features
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+Create and terminate AWS SSM port forwarding sessions from a list of running EC2 instances.
 
-For example if there is an image subfolder under your extension project workspace:
+### Select AWS profiles and regions
+   ![Select profile and region](./docs/select-profile.gif)
 
-\!\[feature X\]\(images/feature-x.png\)
+### Start SSM session
 
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+`Connect to Port` is equivalent to AWS CLI command:
+
+```
+aws ssm start-session `
+ --target <instance-id> `
+ --document-name AWS-StartPortForwardingSession `
+ --parameters "portNumber=[22],localPortNumber=[22222]" `
+ --profile default `
+ --region "us-east-1"
+```
+
+`Connect to Remote Host` is equivalent to AWS CLI command:
+
+```
+aws ssm start-session `
+ --target <instance-id> `
+ --document-name AWS-StartPortForwardingSessionToRemoteHost `
+ --parameters "host=[my-rds-db.us-east-1.rds.amazonaws.com],portNumber=[5432],localPortNumber=[25432]" `
+ --profile default `
+ --region "us-east-1"
+```
+
+   ![Start SSM session](./docs/start-session.gif)
+
+### Terminate SSM session
+   ![Terminate SSM session](./docs/terminate-session.gif)
 
 ## Requirements
 
-SSM plugin installed
+[AWS SSM plugin](https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-working-with-install-plugin.html) installed
 
 
 ## Release Notes
 
-Users appreciate release notes as you update your extension.
-
-### 1.0.0
+### 0.0.1
 
 Initial release
+
+### 0.0.2
+
+Update documentation
