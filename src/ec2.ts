@@ -59,7 +59,7 @@ export async function listEC2Instances(profile: string, region: string): Promise
     return sort(instanceItems, getLabel);
   }
   else {
-    return [new EC2InstanceShell('No running instances found')];
+    return [new EC2InstanceShell(`No running instances found in region ${region}`)];
   }
   
 }
