@@ -28,7 +28,6 @@ export class RefreshManager extends vscode.Disposable {
 
     private setupRefreshOnInterval(): void {
         const timer = setInterval(async () => {
-            console.log("session list refresh");
             this.emitter.fire('auto_session_list_update');
         }, pollingIntervalMs);
 

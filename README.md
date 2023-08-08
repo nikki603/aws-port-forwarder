@@ -1,4 +1,4 @@
-# aws-port-forwarder README
+# AWS SSM port forwarder README
 
 ## Features
 
@@ -8,6 +8,8 @@ Create and terminate AWS SSM port forwarding sessions from a list of running EC2
    ![Select profile and region](./docs/select-profile.gif)
 
 ### Start SSM session
+
+   ![Start SSM session](./docs/start-session.gif)
 
 `Connect to Port` is equivalent to AWS CLI command:
 
@@ -31,14 +33,15 @@ aws ssm start-session `
  --region "us-east-1"
 ```
 
-   ![Start SSM session](./docs/start-session.gif)
 
 ### Terminate SSM session
    ![Terminate SSM session](./docs/terminate-session.gif)
 
 ## Requirements
 
-[AWS SSM plugin](https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-working-with-install-plugin.html) installed
+- [AWS SSM plugin](https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-working-with-install-plugin.html) installed
+
+- Valid, unexpired credentials in the ~/.aws/credentials or ~/.aws/config files
 
 
 ## Release Notes
@@ -50,3 +53,7 @@ Initial release
 ### 0.0.2
 
 Update documentation
+
+### 0.0.3
+
+Improve invalid or expired AWS profile error handling

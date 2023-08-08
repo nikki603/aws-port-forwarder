@@ -1,10 +1,10 @@
 import * as vscode from "vscode";
 import { listEC2Instances } from "./ec2";
-import { EC2Instance } from "./models/ec2Instance.model";
+import { EC2Instance, EC2InstanceShell } from "./models/ec2Instance.model";
 import { ProfileStorage } from "./ProfileStorage";
 import { RegionStorage } from "./RegionStorage";
 
-export class InstanceTreeProvider implements vscode.TreeDataProvider<EC2Instance>, vscode.Disposable {
+export class InstanceTreeProvider implements vscode.TreeDataProvider<EC2Instance | EC2InstanceShell>, vscode.Disposable {
     readonly eventEmitter = new vscode.EventEmitter<string | undefined>();
     private disposables: vscode.Disposable[] = [];
       
@@ -25,7 +25,7 @@ export class InstanceTreeProvider implements vscode.TreeDataProvider<EC2Instance
     getTreeItem(element: EC2Instance): vscode.TreeItem | Thenable<vscode.TreeItem> {
         return element;
     }
-    getChildren(element?: EC2Instance | undefined): vscode.ProviderResult<EC2Instance[]> {
+    getChildren(element?: EC2Instance | undefined): vscode.ProviderResult<EC2Instance[] | EC2InstanceShell[]> {
         if (element) {
             return Promise.resolve([]);
           } else {

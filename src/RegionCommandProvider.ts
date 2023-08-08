@@ -22,8 +22,16 @@ export class RegionCommandProvider {
         vscode.window.showErrorMessage('Select valid profile first.');
       }
     } catch (err) {
-      console.error(JSON.stringify(err));
-      vscode.window.showErrorMessage('Select valid profile first.');
+      const errorStr = JSON.stringify(err);
+      let errorMessage;
+      if (err instanceof Error) {
+        errorMessage = err.message;
+      } else {
+        errorMessage = errorStr;
+      }
+      
+      console.error(errorStr);
+      vscode.window.showErrorMessage(errorMessage);
     }
   }
 }

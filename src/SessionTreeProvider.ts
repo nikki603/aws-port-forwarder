@@ -28,7 +28,6 @@ export class SessionTreeProvider implements vscode.TreeDataProvider<Session>, vs
   readonly onDidChangeTreeData: vscode.Event<Session | undefined> = this._onDidChangeTreeData.event;
 
   public refresh(eventName: string | undefined): void {
-    console.log(eventName);
     this._onDidChangeTreeData.fire(undefined);
   }
 

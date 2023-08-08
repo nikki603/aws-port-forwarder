@@ -65,48 +65,54 @@ export async function startRemotePortForwardingSession(
 }
 
 export async function listConnectedSessions(profile: string, region: string): Promise<Session[] | undefined> {
-    const credentials = fromIni({ profile: profile });
+    try {
+        const credentials = fromIni({ profile: profile });
 
-    const stsclient = new STSClient({ credentials: credentials });
-    const stscommand = new GetCallerIdentityCommand({});
-    const stsresponse = await stsclient.send(stscommand);
+        const stsclient = new STSClient({ credentials: credentials });
+        const stscommand = new GetCallerIdentityCommand({});
+        const stsresponse = await stsclient.send(stscommand);
 
-    const client = new SSMClient({
-        region: region,
-        credentials: credentials
-    });
+        const client = new SSMClient({
+            region: region,
+            credentials: credentials
+        });
 
-    const command = new DescribeSessionsCommand({
-        State: 'Active',
-        Filters: [
-            {
-                key: "Owner",
-                value: stsresponse.Arn,
-            },
-        ]
-    });
+        const command = new DescribeSessionsCommand({
+            State: 'Active',
+            Filters: [
+                {
+                    key: "Owner",
+                    value: stsresponse.Arn,
+                },
+            ]
+        });
 
-    const response = await client.send(command);
+        const response = await client.send(command);
 
-    const sessions = response.Sessions;
+        const sessions = response.Sessions;
 
-    // https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/clients/client-ssm/classes/describesessionscommand.html
-    var sessionViewItems = sessions?.map(session => {
-        return new Session(
-            session.Reason || session.SessionId || '',
-            session.SessionId || '',
-            session.Status || '',
-            session.Target || '',
-            session.StartDate || new Date(),
-            session.DocumentName || '',
-            session.Reason || '',
-            profile,
-            region,
-            vscode.TreeItemCollapsibleState.None
-        );
-    }) || [];
-    const getLabel = (session: Session): string => session.label;
-    return sort(sessionViewItems, getLabel);
+        // https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/clients/client-ssm/classes/describesessionscommand.html
+        var sessionViewItems = sessions?.map(session => {
+            return new Session(
+                session.Reason || session.SessionId || '',
+                session.SessionId || '',
+                session.Status || '',
+                session.Target || '',
+                session.StartDate || new Date(),
+                session.DocumentName || '',
+                session.Reason || '',
+                profile,
+                region,
+                vscode.TreeItemCollapsibleState.None
+            );
+        }) || [];
+        const getLabel = (session: Session): string => session.label;
+        return sort(sessionViewItems, getLabel);
+    } catch (error) {
+        console.log(JSON.stringify(error));
+        return undefined;
+    }
+    
 }
 
 export async function terminateSession(profile: string, region: string, sessionId: string): Promise<void> {

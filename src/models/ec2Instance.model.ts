@@ -1,6 +1,5 @@
 import * as vscode from "vscode";
 
-
 export class EC2Instance extends vscode.TreeItem {
   constructor(
     public readonly label: string,
@@ -35,5 +34,13 @@ export class EC2Instance extends vscode.TreeItem {
       hoverMessage.appendMarkdown(`* Public IP Address: ${this.publicIpv4}\n`);
     }
     return hoverMessage;
+  }
+}
+
+export class EC2InstanceShell extends vscode.TreeItem {
+  constructor(
+    public readonly label: string
+  ) {
+    super(label, vscode.TreeItemCollapsibleState.None);
   }
 }

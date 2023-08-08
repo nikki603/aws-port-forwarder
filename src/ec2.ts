@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import { EC2Client, DescribeInstancesCommand, DescribeRegionsCommand } from '@aws-sdk/client-ec2';
-import { EC2Instance } from "./models/ec2Instance.model";
+import { EC2Instance, EC2InstanceShell } from "./models/ec2Instance.model";
 import {
   TreeItemCollapsibleState
 } from "vscode";
@@ -23,7 +23,7 @@ export async function getRegions(profile: string): Promise<string[]> {
   return sort(regions, getSortField);
 }
 
-export async function listEC2Instances(profile: string, region: string): Promise<EC2Instance[]> {
+export async function listEC2Instances(profile: string, region: string): Promise<EC2Instance[] | EC2InstanceShell[]> {
   const credentials = fromIni({ profile: profile });
   const client = new EC2Client({
     region: region,
@@ -55,5 +55,11 @@ export async function listEC2Instances(profile: string, region: string): Promise
     );
   }) || [];
   const getLabel = (i: EC2Instance): string => i.label;
-  return sort(instanceItems, getLabel);
+  if (instanceItems.length > 0) {
+    return sort(instanceItems, getLabel);
+  }
+  else {
+    return [new EC2InstanceShell('No running instances found')];
+  }
+  
 }
