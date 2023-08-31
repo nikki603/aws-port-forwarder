@@ -47,6 +47,9 @@ export async function activate(context: vscode.ExtensionContext) {
 	vscode.commands.registerCommand('apf.connectRemotePortForward', async (node: EC2Instance) => {
 		sessionListViewProvider.startRemotePortForwardingSession(node);
 	});
+	vscode.commands.registerCommand('apf.connectRdp', async (node: EC2Instance) => {
+		sessionListViewProvider.startRdpSession(node);
+	});
 	vscode.commands.registerCommand('apf.terminateSession', async (node: Session) => {
 		sessionListViewProvider.terminateSession(node);
 	});

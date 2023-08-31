@@ -6,7 +6,8 @@ import { startPortForwardingSession, startRemotePortForwardingSession, terminate
 import { ProfileStorage } from "./ProfileStorage";
 import { RegionStorage } from "./RegionStorage";
 import { RefreshManager } from "./RefreshManager";
-import { startSSMPlugin } from "./SSMPluginProvider";
+import { startSSMPluginAndWait } from "./SSMPluginProvider";
+import { getAvailablePort, startRdpSession } from './RdpProvider';
 
 export class SessionTreeProvider implements vscode.TreeDataProvider<Session>, vscode.Disposable {
   readonly eventEmitter = new vscode.EventEmitter<string | undefined>();
@@ -52,7 +53,7 @@ export class SessionTreeProvider implements vscode.TreeDataProvider<Session>, vs
     const currentRegion = this.regionStore.getCurrentRegion();
 
     if (currentProfile && currentRegion) {
-      await startPortForwardingSession(currentProfile, currentRegion, target, localPort, remotePort, startSSMPlugin);
+      await startPortForwardingSession(currentProfile, currentRegion, target, localPort, remotePort, startSSMPluginAndWait);
       this.refresh('session_started');
     }
   }
@@ -84,7 +85,7 @@ export class SessionTreeProvider implements vscode.TreeDataProvider<Session>, vs
     const currentProfile = this.profileStore.getCurrentProfileId();
     const currentRegion = this.regionStore.getCurrentRegion();
     if (currentProfile && currentRegion) {
-      await startRemotePortForwardingSession(currentProfile, currentRegion, target, localPort, remotePort, remoteHost, startSSMPlugin);
+      await startRemotePortForwardingSession(currentProfile, currentRegion, target, localPort, remotePort, remoteHost, startSSMPluginAndWait);
       this.refresh('session_started');
     }
   }
@@ -95,6 +96,19 @@ export class SessionTreeProvider implements vscode.TreeDataProvider<Session>, vs
     if (currentProfile && currentRegion) {
       await terminateSession(currentProfile, currentRegion, session.sessionId);
       this.refresh('session_terminated');
+    }
+  }
+
+  public async startRdpSession(target: EC2Instance): Promise<void> {
+    const localPort = await getAvailablePort();
+
+    const currentProfile = this.profileStore.getCurrentProfileId();
+    const currentRegion = this.regionStore.getCurrentRegion();
+
+    if (currentProfile && currentRegion) {
+      await startPortForwardingSession(currentProfile, currentRegion, target, localPort.toString(), '3389', startSSMPluginAndWait);
+      this.refresh('session_started');
+      await startRdpSession(localPort);
     }
   }
 

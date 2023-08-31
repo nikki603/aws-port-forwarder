@@ -23,6 +23,34 @@
   "activationEvents": [],
   "main": "./out/extension.js",
   "contributes": {
+    "configuration":{
+      "title": "AWS Session Manager",
+      "type": "object",
+      "properties": {
+        "apf.rdp.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable Microsoft Remote Desktop usage (Supported on Windows and MacOS)",
+          "order": 0
+        },
+        "apf.rdp.portRange.startNumber": {
+          "type": "number",
+          "default": 20000,
+          "minimum": 1,
+          "maximum": 65535,
+          "description": "Localhost network port range used for RDP port forwarding. Choose a range that is not used by other applications - start",
+          "order": 1
+        },
+        "apf.rdp.portRange.endNumber": {
+          "type": "number",
+          "default": 29999,
+          "minimum": 1,
+          "maximum": 65535,
+          "description": "Localhost network port range used for RDP port forwarding. Choose a range that is not used by other applications - end",
+          "order": 2
+        }
+      }
+    },
     "viewsContainers": {
       "activitybar": [
         {
@@ -113,7 +141,7 @@
         },
         {
           "command": "apf.connectRdp",
-          "when": "view == apf.instance-list && viewItem == instance.windows",
+          "when": "(isWindows || isMac) && config.apf.rdp.enabled && view == apf.instance-list && viewItem == instance.windows",
           "group": "0@1"
         },
         {
