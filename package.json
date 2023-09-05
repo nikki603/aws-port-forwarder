@@ -3,7 +3,7 @@
   "displayName": "AWS SSM port forwarder",
   "description": "Uses AWS SSM to manage port forwarding from VS Code",
   "publisher": "NicoleSands",
-  "version": "0.0.4",
+  "version": "1.0.0",
   "engines": {
     "vscode": "^1.79.0"
   },
