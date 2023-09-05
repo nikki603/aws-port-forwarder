@@ -17,7 +17,7 @@ export async function getAvailablePort(): Promise<number> {
         port = Math.floor(Math.random() * (end - start + 1)) + start;
         
         if (attempts++ >= 1000) {
-            const err = `Open port can\'t be found in the given range ${start}-${end}`;
+            const err = `Open port can\'t be found in a timely manner in the given range ${start}-${end}`;
             console.error(err);
             vscode.window.showErrorMessage(err);
             throw new Error(err);
