@@ -1,6 +1,6 @@
 # Change Log
 
-All notable changes to the "AWS Session Manager" extension will be documented in this file.
+All notable changes to the "AWS SSM port forwarder" extension will be documented in this file.
 
 ## [Released]
 
