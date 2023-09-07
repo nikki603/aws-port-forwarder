@@ -3,7 +3,7 @@ import * as vscode from "vscode";
 import { SSMClient, StartSessionCommand, TerminateSessionCommand, DescribeSessionsCommand, StartSessionCommandOutput } from '@aws-sdk/client-ssm';
 import { EC2Instance } from "./models/ec2Instance.model";
 import { Session } from "./models/session.model";
-import { fromIni } from "@aws-sdk/credential-providers";
+import { fromNodeProviderChain } from "@aws-sdk/credential-providers";
 import { STSClient, GetCallerIdentityCommand } from "@aws-sdk/client-sts";
 import { sort } from './utils';
 
@@ -14,10 +14,10 @@ export async function startPortForwardingSession(
         localPort: string,
         remotePort: string,
         startSSMPlugin: (a: StartSessionCommandOutput, b: string, c: string, d: StartSessionCommand, e: SSMClient) => Promise<string | undefined>): Promise<void> {
-    const credentials = fromIni({ profile: profile });
+    const credentialProvider = fromNodeProviderChain({ profile });
     const client = new SSMClient({
         region: region,
-        credentials: credentials
+        credentials: credentialProvider
     });
 
     const command = new StartSessionCommand({
@@ -43,10 +43,10 @@ export async function startRemotePortForwardingSession(
         remotePort: string,
         remoteHost: string,
         startSSMPlugin: (a: StartSessionCommandOutput, b: string, c: string, d: StartSessionCommand, e: SSMClient) => Promise<string | undefined>): Promise<void> {
-    const credentials = fromIni({ profile: profile });
+    const credentialProvider = fromNodeProviderChain({ profile });
     const client = new SSMClient({
         region: region,
-        credentials: credentials
+        credentials: credentialProvider
     });
 
     const command = new StartSessionCommand({
@@ -66,15 +66,15 @@ export async function startRemotePortForwardingSession(
 
 export async function listConnectedSessions(profile: string, region: string): Promise<Session[] | undefined> {
     try {
-        const credentials = fromIni({ profile: profile });
+        const credentialProvider = fromNodeProviderChain({ profile });
 
-        const stsclient = new STSClient({ credentials: credentials });
+        const stsclient = new STSClient({ credentials: credentialProvider });
         const stscommand = new GetCallerIdentityCommand({});
         const stsresponse = await stsclient.send(stscommand);
 
         const client = new SSMClient({
             region: region,
-            credentials: credentials
+            credentials: credentialProvider
         });
 
         const command = new DescribeSessionsCommand({
@@ -116,10 +116,10 @@ export async function listConnectedSessions(profile: string, region: string): Pr
 }
 
 export async function terminateSession(profile: string, region: string, sessionId: string): Promise<void> {
-    const credentials = fromIni({ profile: profile });
+    const credentialProvider = fromNodeProviderChain({ profile });
     const client = new SSMClient({
         region: region,
-        credentials: credentials
+        credentials: credentialProvider
     });
 
     const command = new TerminateSessionCommand({
