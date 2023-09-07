@@ -1,6 +1,6 @@
 import { loadSharedConfigFiles } from "@aws-sdk/shared-ini-file-loader";
 import { STSClient, GetCallerIdentityCommand } from "@aws-sdk/client-sts";
-import { fromIni } from "@aws-sdk/credential-providers";
+import { fromNodeProviderChain } from "@aws-sdk/credential-providers";
 
 export async function listProfiles(): Promise<string[]> {
   const configs = await loadSharedConfigFiles({ignoreCache: true});
@@ -12,8 +12,8 @@ export async function listProfiles(): Promise<string[]> {
 
 export async function isValidProfile(profile: string): Promise<boolean> {
   try {
-    const credentials = fromIni({ profile: profile });
-    const stsclient = new STSClient({ credentials: credentials });
+    const credentialProvider = fromNodeProviderChain({ profile });
+    const stsclient = new STSClient({ credentials: credentialProvider });
     const stscommand = new GetCallerIdentityCommand({});
     const stsresponse = await stsclient.send(stscommand);
     return stsresponse.Account !== undefined;
@@ -22,5 +22,4 @@ export async function isValidProfile(profile: string): Promise<boolean> {
     console.error(JSON.stringify(err));
     return false;
   }
-  
 }

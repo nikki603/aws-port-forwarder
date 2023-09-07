@@ -4,13 +4,13 @@ import { EC2Instance, EC2InstanceShell } from "./models/ec2Instance.model";
 import {
   TreeItemCollapsibleState
 } from "vscode";
-import { fromIni } from "@aws-sdk/credential-providers";
+import { fromNodeProviderChain } from "@aws-sdk/credential-providers";
 import { sort } from './utils';
 
 export async function getRegions(profile: string): Promise<string[]> {
-  const credentials = fromIni({ profile: profile });
+  const credentialProvider = fromNodeProviderChain({ profile });
   const client = new EC2Client({
-    credentials: credentials
+    credentials: credentialProvider
   });
 
   const command = new DescribeRegionsCommand({});
@@ -24,10 +24,10 @@ export async function getRegions(profile: string): Promise<string[]> {
 }
 
 export async function listEC2Instances(profile: string, region: string): Promise<EC2Instance[] | EC2InstanceShell[]> {
-  const credentials = fromIni({ profile: profile });
+  const credentialProvider = fromNodeProviderChain({ profile });
   const client = new EC2Client({
     region: region,
-    credentials: credentials
+    credentials: credentialProvider
   });
 
   const command = new DescribeInstancesCommand({

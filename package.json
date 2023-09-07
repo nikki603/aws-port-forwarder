@@ -171,7 +171,7 @@
     "@aws-sdk/client-ssm": "3.303.0",
     "@aws-sdk/types": "3.303.0",
     "@aws-sdk/client-sts": "3.303.0",
-    "@aws-sdk/credential-providers": "3.303.0",
+    "@aws-sdk/credential-providers": "3.405.0",
     "@aws-sdk/shared-ini-file-loader": "3.303.0"
   },
   "devDependencies": {
