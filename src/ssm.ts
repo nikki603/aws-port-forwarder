@@ -13,7 +13,7 @@ export async function startPortForwardingSession(
         target: EC2Instance,
         localPort: string,
         remotePort: string,
-        startSSMPlugin: (a: StartSessionCommandOutput, b: string, c: string, d: StartSessionCommand, e: SSMClient) => void): Promise<void> {
+        startSSMPlugin: (a: StartSessionCommandOutput, b: string, c: string, d: StartSessionCommand, e: SSMClient) => Promise<string | undefined>): Promise<void> {
     const credentials = fromIni({ profile: profile });
     const client = new SSMClient({
         region: region,
@@ -32,7 +32,7 @@ export async function startPortForwardingSession(
 
     const response = await client.send(command);
 
-    startSSMPlugin(response, profile, region, command, client);
+    await startSSMPlugin(response, profile, region, command, client);
 }
 
 export async function startRemotePortForwardingSession(
@@ -42,7 +42,7 @@ export async function startRemotePortForwardingSession(
         localPort: string,
         remotePort: string,
         remoteHost: string,
-        startSSMPlugin: (a: StartSessionCommandOutput, b: string, c: string, d: StartSessionCommand, e: SSMClient) => void): Promise<void> {
+        startSSMPlugin: (a: StartSessionCommandOutput, b: string, c: string, d: StartSessionCommand, e: SSMClient) => Promise<string | undefined>): Promise<void> {
     const credentials = fromIni({ profile: profile });
     const client = new SSMClient({
         region: region,
@@ -61,7 +61,7 @@ export async function startRemotePortForwardingSession(
     });
 
     const response = await client.send(command);
-    startSSMPlugin(response, profile, region, command, client);
+    await startSSMPlugin(response, profile, region, command, client);
 }
 
 export async function listConnectedSessions(profile: string, region: string): Promise<Session[] | undefined> {
