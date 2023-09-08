@@ -1,10 +1,14 @@
 import * as vscode from "vscode";
 import { listEC2Instances } from "./ec2";
-import { EC2Instance, EC2InstanceShell } from "./models/ec2Instance.model";
+import { EC2Instance, EC2InstanceTreeItem } from "./models/ec2Instance.model";
 import { ProfileStorage } from "./ProfileStorage";
 import { RegionStorage } from "./RegionStorage";
+import { isValidProfile } from "./listProfiles";
 
-export class InstanceTreeProvider implements vscode.TreeDataProvider<EC2Instance | EC2InstanceShell>, vscode.Disposable {
+const errorIcon = 'error';
+const validIcon = 'pass-filled';
+
+export class InstanceTreeProvider implements vscode.TreeDataProvider<EC2Instance | EC2InstanceTreeItem>, vscode.Disposable {
     readonly eventEmitter = new vscode.EventEmitter<string | undefined>();
     private disposables: vscode.Disposable[] = [];
       
@@ -25,18 +29,47 @@ export class InstanceTreeProvider implements vscode.TreeDataProvider<EC2Instance
     getTreeItem(element: EC2Instance): vscode.TreeItem | Thenable<vscode.TreeItem> {
         return element;
     }
-    getChildren(element?: EC2Instance | undefined): vscode.ProviderResult<EC2Instance[] | EC2InstanceShell[]> {
-        if (element) {
-            return Promise.resolve([]);
-          } else {
-            const currentProfile = this.profileStore.getCurrentProfileId();
-            const currentRegion = this.regionStore.getCurrentRegion();
-            
-            if (currentProfile && currentRegion) {
-              return listEC2Instances(currentProfile, currentRegion);
-            }
-          }
+    getChildren(element?: EC2Instance | undefined): vscode.ProviderResult<(EC2Instance | EC2InstanceTreeItem)[]> {
+      if (element) {
+        return Promise.resolve([]);
+      } else {
+        const currentProfile = this.profileStore.getCurrentProfileId();
+        const currentRegion = this.regionStore.getCurrentRegion();
+        
+        if (currentProfile && currentRegion) {
+          return this.getInstanceTree(currentProfile, currentRegion);
+        }
+      }
     }
+
+    private async getInstanceTree(profile: string, region: string): Promise<EC2Instance[] | EC2InstanceTreeItem[]> {
+        const instancesTree = new Array<(EC2Instance | EC2InstanceTreeItem)>;
+        const isProfileValid = await isValidProfile(profile);
+        this.addProfileTreeItem(instancesTree, isProfileValid, profile, region);
+
+        if (isProfileValid) {
+          const instances = await listEC2Instances(profile, region);
+          instancesTree.push(...instances);
+          if (instances.length === 0) {
+            instancesTree.push(new EC2InstanceTreeItem(`No running instances found in region ${region}`));
+          }
+        }
+        
+        return instancesTree;
+    }
+
+    private addProfileTreeItem(instancesTree: (EC2Instance | EC2InstanceTreeItem)[], isProfileValid: boolean, profile: string, region: string) {
+        let profileStatus = '';
+        if (!isProfileValid) {
+          profileStatus += 'Invalid or expired credentials';
+        }
+
+        const icon = isProfileValid ? validIcon : errorIcon;
+        const iconColor = isProfileValid ? '#008000' : '#FF0000';
+        instancesTree.push(new EC2InstanceTreeItem(`Profile: ${profile}, region: ${region}`, profileStatus, icon, iconColor));
+        instancesTree.push(new EC2InstanceTreeItem(''));
+    }
+
     getParent?(element: EC2Instance): vscode.ProviderResult<EC2Instance> {
         throw new Error("Method not implemented.");
     }
