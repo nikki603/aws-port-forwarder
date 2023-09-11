@@ -37,10 +37,17 @@ export class EC2Instance extends vscode.TreeItem {
   }
 }
 
-export class EC2InstanceShell extends vscode.TreeItem {
+export class EC2InstanceTreeItem extends vscode.TreeItem {
   constructor(
-    public readonly label: string
+    public readonly label: string,
+    public readonly status?: string,
+    public readonly iconName?: string,
+    public readonly iconColor?: string
   ) {
     super(label, vscode.TreeItemCollapsibleState.None);
+    this.description = status;
+    if (iconName) {
+      this.iconPath = new vscode.ThemeIcon(iconName, new vscode.ThemeColor(iconColor || ''));
+    }
   }
 }
