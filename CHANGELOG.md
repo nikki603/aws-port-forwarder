@@ -1,3 +1,7 @@
+# 1.1.0
+- **Feature**: show currently selected profile and region
+
+
 # 1.0.0
 
 - **Feature** RDP: Add Microsoft Remote Desktop functionality for Windows and MacOS. "Connect via RDP" menu option
