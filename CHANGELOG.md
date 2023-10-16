@@ -1,3 +1,7 @@
+# 1.1.1
+- **Bug Fix**: ignore cache for shared credentials files
+
+
 # 1.1.0
 - **Feature**: show currently selected profile and region
 
