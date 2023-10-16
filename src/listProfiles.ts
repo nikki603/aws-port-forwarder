@@ -12,14 +12,14 @@ export async function listProfiles(): Promise<string[]> {
 
 export async function isValidProfile(profile: string): Promise<boolean> {
   try {
-    const credentialProvider = fromNodeProviderChain({ profile });
+    const credentialProvider = fromNodeProviderChain({ profile, ignoreCache: true });
     const stsclient = new STSClient({ credentials: credentialProvider });
     const stscommand = new GetCallerIdentityCommand({});
     const stsresponse = await stsclient.send(stscommand);
     return stsresponse.Account !== undefined;
   }
   catch (err) {
-    console.error(JSON.stringify(err));
+    console.error(`profile: ${profile} ` + JSON.stringify(err));
     return false;
   }
 }
