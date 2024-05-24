@@ -3,7 +3,7 @@
   "displayName": "AWS SSM port forwarder",
   "description": "Uses AWS SSM to manage port forwarding from VS Code",
   "publisher": "NicoleSands",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "engines": {
     "vscode": "^1.79.0"
   },
@@ -23,7 +23,7 @@
   "activationEvents": [],
   "main": "./out/extension.js",
   "contributes": {
-    "configuration":{
+    "configuration": {
       "title": "AWS Session Manager",
       "type": "object",
       "properties": {
