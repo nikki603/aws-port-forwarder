@@ -48,7 +48,7 @@ export async function listEC2Instances(profile: string, region: string): Promise
       nameTag?.Value || instance.InstanceId || '',
       instance.State?.Name || '',
       instance.InstanceId || '',
-      instance.Platform || '',
+      instance.Platform || instance.PlatformDetails || '',
       instance.PrivateIpAddress || '',
       instance.PublicIpAddress || '',
       TreeItemCollapsibleState.None
