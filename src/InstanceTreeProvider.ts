@@ -1,9 +1,11 @@
 import * as vscode from "vscode";
 import { listEC2Instances } from "./ec2";
+import { listManagedInstances } from "./ssm";
 import { EC2Instance, EC2InstanceTreeItem } from "./models/ec2Instance.model";
 import { ProfileStorage } from "./ProfileStorage";
 import { RegionStorage } from "./RegionStorage";
 import { isValidProfile } from "./listProfiles";
+import { ManagedInstance } from "./models/managedInstance.model";
 
 const errorIcon = 'error';
 const validIcon = 'pass-filled';
@@ -42,15 +44,20 @@ export class InstanceTreeProvider implements vscode.TreeDataProvider<EC2Instance
       }
     }
 
-    private async getInstanceTree(profile: string, region: string): Promise<EC2Instance[] | EC2InstanceTreeItem[]> {
-        const instancesTree = new Array<(EC2Instance | EC2InstanceTreeItem)>;
+    private async getInstanceTree(profile: string, region: string): Promise<EC2Instance[] | ManagedInstance[] | EC2InstanceTreeItem[]> {
+        const instancesTree = new Array<(EC2Instance | ManagedInstance | EC2InstanceTreeItem)>;
         const isProfileValid = await isValidProfile(profile);
         this.addProfileTreeItem(instancesTree, isProfileValid, profile, region);
 
         if (isProfileValid) {
-          const instances = await listEC2Instances(profile, region);
+          const instancesTask = listEC2Instances(profile, region);
+          const managedInstancesTask = listManagedInstances(profile, region);
+
+          const [ instances, managedInstances ] = await Promise.all([instancesTask, managedInstancesTask]);
+          
           instancesTree.push(...instances);
-          if (instances.length === 0) {
+          instancesTree.push(...managedInstances);
+          if (instances.length === 0 && managedInstances.length === 0) {
             instancesTree.push(new EC2InstanceTreeItem(`No running instances found in region ${region}`));
           }
         }
