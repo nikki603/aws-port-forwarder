@@ -2,7 +2,7 @@
 
 ## Features
 
-Create and terminate AWS SSM port forwarding sessions from a list of running EC2 instances.
+Create and terminate AWS SSM port forwarding sessions from a list of running EC2 and SSM Managed instances.
 
 ### Select AWS profiles and regions
    ![Select profile and region](./docs/select-profile.gif)

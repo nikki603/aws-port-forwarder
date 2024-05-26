@@ -1,3 +1,7 @@
+# 1.3.0
+- **Feature**: include SSM managed instances in the Instances list
+
+
 # 1.1.1
 - **Bug Fix**: ignore cache for shared credentials files
 
